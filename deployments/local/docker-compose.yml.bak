@@ -1,0 +1,1011 @@
+services:
+      
+  auth-db: &postgres-base
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=auth_db
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-bouncer: &bouncer-base
+    image: edoburu/pgbouncer:latest
+    restart: always
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@auth-db:5432/auth_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=auth-db
+      - DB_NAME=auth_db
+      - AUTH_TYPE=plain
+      - POOL_MODE=transaction
+      - PGB_LISTEN_PORT=6432
+      - MAX_CLIENT_CONN=1000
+      - DEFAULT_POOL_SIZE=20
+      - ADMIN_USERS=DRAGON
+    ports:
+      - "6432"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U DRAGON"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+  user-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=user_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d user_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  user-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@user-db:5432/user_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=user-db
+      - DB_NAME=user_db
+      - AUTH_TYPE=plain
+    depends_on:
+      user-db:
+        condition: service_healthy
+
+  role-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=role_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d role_db"]
+  
+  role-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@role-db:5432/role_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=role-db
+      - DB_NAME=role_db
+      - AUTH_TYPE=plain
+    depends_on:
+      role-db:
+        condition: service_healthy
+
+  card-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=card_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d card_db"]
+
+  card-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@card-db:5432/card_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=card-db
+      - DB_NAME=card_db
+      - AUTH_TYPE=plain
+    depends_on:
+      card-db:
+        condition: service_healthy
+
+  merchant-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=merchant_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d merchant_db"]
+
+  merchant-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@merchant-db:5432/merchant_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=merchant-db
+      - DB_NAME=merchant_db
+      - AUTH_TYPE=plain
+    depends_on:
+      merchant-db:
+        condition: service_healthy
+
+  saldo-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=saldo_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d saldo_db"]
+
+  saldo-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@saldo-db:5432/saldo_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=saldo-db
+      - DB_NAME=saldo_db
+      - AUTH_TYPE=plain
+    depends_on:
+      saldo-db:
+        condition: service_healthy
+
+  topup-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=topup_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d topup_db"]
+
+  topup-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@topup-db:5432/topup_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=topup-db
+      - DB_NAME=topup_db
+      - AUTH_TYPE=plain
+    depends_on:
+      topup-db:
+        condition: service_healthy
+
+  transaction-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=transaction_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d transaction_db"]
+
+  transaction-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@transaction-db:5432/transaction_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=transaction-db
+      - DB_NAME=transaction_db
+      - AUTH_TYPE=plain
+    depends_on:
+      transaction-db:
+        condition: service_healthy
+
+  transfer-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=transfer_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d transfer_db"]
+
+  transfer-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@transfer-db:5432/transfer_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=transfer-db
+      - DB_NAME=transfer_db
+      - AUTH_TYPE=plain
+    depends_on:
+      transfer-db:
+        condition: service_healthy
+
+  withdraw-db:
+    <<: *postgres-base
+    environment:
+      - POSTGRES_USER=DRAGON
+      - POSTGRES_PASSWORD=DRAGON
+      - POSTGRES_DB=withdraw_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d withdraw_db"]
+
+  withdraw-bouncer:
+    <<: *bouncer-base
+    environment:
+      - DATABASE_URL=postgres://DRAGON:DRAGON@withdraw-db:5432/withdraw_db
+      - DB_USER=DRAGON
+      - DB_PASSWORD=DRAGON
+      - DB_HOST=withdraw-db
+      - DB_NAME=withdraw_db
+      - AUTH_TYPE=plain
+    depends_on:
+      withdraw-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+
+  pyroscope:
+    image: grafana/pyroscope:latest
+    ports:
+    - 4040:4040
+    networks:
+      - app_network
+
+  redis-node-1:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--requirepass", "dragon_knight", "--masterauth", "dragon_knight"]
+    networks:
+      - app_network
+
+  redis-node-2:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--requirepass", "dragon_knight", "--masterauth", "dragon_knight"]
+    networks:
+      - app_network
+
+  redis-node-3:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--requirepass", "dragon_knight", "--masterauth", "dragon_knight"]
+    networks:
+      - app_network
+
+  redis-node-4:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--requirepass", "dragon_knight", "--masterauth", "dragon_knight"]
+    networks:
+      - app_network
+
+  redis-node-5:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--requirepass", "dragon_knight", "--masterauth", "dragon_knight"]
+    networks:
+      - app_network
+
+  redis-node-6:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--requirepass", "dragon_knight", "--masterauth", "dragon_knight"]
+    networks:
+      - app_network
+
+  redis-cluster-init:
+    image: redis:7.4-alpine
+    container_name: redis-cluster-init
+    depends_on:
+      redis-node-1:
+        condition: service_started
+      redis-node-2:
+        condition: service_started
+      redis-node-3:
+        condition: service_started
+      redis-node-4:
+        condition: service_started
+      redis-node-5:
+        condition: service_started
+      redis-node-6:
+        condition: service_started
+    command:
+      - sh
+      - -c
+      - |
+        for node in redis-node-1 redis-node-2 redis-node-3 redis-node-4 redis-node-5 redis-node-6; do
+          until redis-cli -h $$node -a dragon_knight ping > /dev/null 2>&1; do
+            echo "Waiting for $$node to be ready..."
+            sleep 1
+          done
+        done
+
+        if redis-cli --no-auth-warning -a dragon_knight --cluster check redis-node-1:6379 > /dev/null 2>&1; then
+          echo "Redis cluster already initialized and healthy"
+          exit 0
+        fi
+
+        echo "Creating Redis cluster..."
+        echo "yes" | redis-cli --no-auth-warning -a dragon_knight --cluster create \
+        redis-node-1:6379 \
+        redis-node-2:6379 \
+        redis-node-3:6379 \
+        redis-node-4:6379 \
+        redis-node-5:6379 \
+        redis-node-6:6379 \
+        --cluster-replicas 1
+    networks:
+      - app_network
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter
+    container_name: node-exporter
+    pid: "host"
+    networks:
+      - app_network
+    volumes:
+      - "/:/host:ro,rslave"
+    command:
+      - '--path.rootfs=/host'
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - app_network
+    environment:
+      - CLICKHOUSE_USER=dragon
+      - CLICKHOUSE_PASSWORD=dragon_knight
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+
+  kafka-1:
+    image: apache/kafka:latest
+    container_name: kafka-1
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CLUSTER_ID: kraft-cluster-01
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kafka-2:
+    image: apache/kafka:latest
+    container_name: kafka-2
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CLUSTER_ID: kraft-cluster-01
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kafka-3:
+    image: apache/kafka:latest
+    container_name: kafka-3
+    ports:
+      - "9095:9092"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CLUSTER_ID: kraft-cluster-01
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    volumes:
+      - ../../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "9093:9093"
+    networks:
+      - app_network
+
+
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - apigateway
+    networks:
+      - app_network
+
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./../../observability/otel-collector.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8888:8888"
+      - "8889:8889"
+    networks:
+      - app_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./../../observability/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./../../observability/rules:/etc/prometheus/rules
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - app_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - app_network
+    depends_on:
+      - prometheus
+      - jaeger
+      - alertmanager
+      - loki
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+    networks:
+      - app_network
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    networks:
+      - app_network
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    command:
+      - "--kafka.server=kafka-1:9092,kafka-2:9092,kafka-3:9092"
+      - "--web.listen-address=0.0.0.0:9308"
+      - "--log.level=debug"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9308/metrics || exit 1"]
+      interval: 30s
+      start_period: 120s
+      timeout: 10s
+      retries: 3
+
+  loki:
+    container_name: loki
+    image: grafana/loki:3.5.8
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../../observability/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - app_network
+
+  apigateway:
+    image: microservice-payment-gateway-grpc/apigateway:latest
+    container_name: apigateway
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    ports:
+      - "5000:5000"
+      - "8091:8091"
+    networks:
+      - app_network
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      redis-cluster-init:
+        condition: service_completed_successfully
+      auth:
+        condition: service_started
+      card:
+        condition: service_started
+      merchant:
+        condition: service_started
+      user:
+        condition: service_started
+      role:
+        condition: service_started
+      saldo:
+        condition: service_started
+      topup:
+        condition: service_started
+      transaction:
+        condition: service_started
+      transfer:
+        condition: service_started
+      withdraw:
+        condition: service_started
+    environment:
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+
+
+
+  auth:
+    image: microservice-payment-gateway-grpc/auth:latest
+    container_name: auth
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=auth-bouncer
+      - DB_NAME=auth_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      auth-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  merchant:
+    image: microservice-payment-gateway-grpc/merchant:latest
+    container_name: merchant
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=merchant-bouncer
+      - DB_NAME=merchant_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      merchant-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  card:
+    image: microservice-payment-gateway-grpc/card:latest
+    container_name: card
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=card-bouncer
+      - DB_NAME=card_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      card-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  saldo:
+    image: microservice-payment-gateway-grpc/saldo:latest
+    container_name: saldo
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=saldo-bouncer
+      - DB_NAME=saldo_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      saldo-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  role:
+    image: microservice-payment-gateway-grpc/role:latest
+    container_name: role
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=role-bouncer
+      - DB_NAME=role_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      role-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  topup:
+    image: microservice-payment-gateway-grpc/topup:latest
+    container_name: topup
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=topup-bouncer
+      - DB_NAME=topup_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      topup-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  transaction:
+    image: microservice-payment-gateway-grpc/transaction:latest
+    container_name: transaction
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=transaction-bouncer
+      - DB_NAME=transaction_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      transaction-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  transfer:
+    image: microservice-payment-gateway-grpc/transfer:latest
+    container_name: transfer
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=transfer-bouncer
+      - DB_NAME=transfer_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      transfer-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  user:
+    image: microservice-payment-gateway-grpc/user:latest
+    container_name: user
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=user-bouncer
+      - DB_NAME=user_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      user-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  email:
+    image: microservice-payment-gateway-grpc/email:latest
+    container_name: email
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    networks:
+      - app_network
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    environment:
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+
+  withdraw:
+    image: microservice-payment-gateway-grpc/withdraw:latest
+    container_name: withdraw
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    environment:
+      - DB_HOST=withdraw-bouncer
+      - DB_NAME=withdraw_db
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    networks:
+      - app_network
+    depends_on:
+      withdraw-bouncer:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+
+  stats-reader:
+    image: microservice-payment-gateway-grpc/stats-reader:latest
+    container_name: stats-reader
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    ports:
+      - "50062:50062"
+    networks:
+      - app_network
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    environment:
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=9000
+
+  stats-writer:
+    image: microservice-payment-gateway-grpc/stats-writer:latest
+    container_name: stats-writer
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    networks:
+      - app_network
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    environment:
+      - OTEL_ENDPOINT=otel-collector:4317
+      - APP_ENV=docker
+      - KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=9000
+
+  ai-security:
+    image: microservice-payment-gateway-grpc/ai-security:latest
+    container_name: ai-security
+    env_file: ./docker.env
+    volumes:
+      - ./docker.env:/app/docker.env
+    ports:
+      - "50051:50051"
+    networks:
+      - app_network
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+      redis-cluster-init:
+        condition: service_completed_successfully
+      otel-collector:
+        condition: service_started
+    environment:
+      - OTEL_ENDPOINT=otel-collector:4317
+      - KAFKA_SERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+      - REDIS_PASSWORD=dragon_knight
+
+volumes:
+  loki-data:
+  grafana-storage:
+  kafka_data:
+  redis_cluster_data_1:
+  redis_cluster_data_2:
+  redis_cluster_data_3:
+  redis_cluster_data_4:
+  redis_cluster_data_5:
+  redis_cluster_data_6:
+  clickhouse_data:
+  prometheus-data:
+
+networks:
+  app_network:
+    driver: bridge

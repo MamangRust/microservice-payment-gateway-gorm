@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package pb.ai_security;
+
+option go_package = "github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security";
+
+enum SecurityDomain {
+  UNKNOWN = 0;
+  CARD = 1;
+  MERCHANT = 2;
+  SALDO = 3;
+  TOPUP = 4;
+  TRANSACTION = 5;
+  TRANSFER = 6;
+  WITHDRAW = 7;
+}
+
+service AISecurityService {
+  rpc DetectFraud(FraudRequest) returns (FraudResponse) {}
+  rpc VerifySecurity(SecurityRequest) returns (SecurityResponse) {}
+  rpc BatchTrainModel(TrainRequest) returns (TrainResponse) {}
+}
+
+message FraudRequest {
+  string transaction_id = 1;
+  int32 merchant_id = 2;
+  int32 user_id = 3;
+  double amount = 4;
+  string currency = 5;
+  string payment_method = 6;
+  string device_id = 7;
+  string ip_address = 8;
+  int64 timestamp = 9;
+}
+
+message FraudResponse {
+  string transaction_id = 1;
+  double risk_score = 2; // 0.0 to 1.0
+  bool is_fraudulent = 3;
+  string reason = 4;
+}
+
+message SecurityRequest {
+  SecurityDomain domain = 1;
+  string entity_id = 2; // user_id, merchant_id, or card_number
+  map<string, string> metadata = 3;
+  double amount = 4;
+}
+
+message SecurityResponse {
+  bool is_safe = 1;
+  double risk_score = 2;
+  string reason = 3;
+  string action = 4; // ALLOW, CHALLENGE, DENY
+}
+
+message TrainRequest {
+  string start_date = 1;
+  string end_date = 2;
+}
+
+message TrainResponse {
+  bool success = 1;
+  string message = 2;
+  double accuracy = 3;
+}
+

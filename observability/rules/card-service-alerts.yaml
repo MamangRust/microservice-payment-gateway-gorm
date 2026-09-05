@@ -1,0 +1,67 @@
+# Card service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go, exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+# Statistics endpoints are served by stats-reader and are not instrumented
+# with these metrics; only command/query methods are covered here.
+groups:
+  - name: card-services-alerts
+    rules:
+      - alert: HighFailureRate_CardCommandService
+        expr: increase(golang_app_requests_total{service_name="card-service", method=~"CreateCard|UpdateCard|TrashedCard|RestoreCard|DeleteCardPermanent|RestoreAllCard|DeleteAllCardPermanent|ToggleCardStatus|UpdateCreditLimit|RedeemPoints", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: card_command_service
+        annotations:
+          summary: "High failure rate on card command service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_CardCommandService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="card-service", method=~"CreateCard|UpdateCard|TrashedCard|RestoreCard|DeleteCardPermanent|RestoreAllCard|DeleteAllCardPermanent|ToggleCardStatus|UpdateCreditLimit|RedeemPoints"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: card_command_service
+        annotations:
+          summary: "High latency on card command service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_CardCommandService
+        expr: rate(golang_app_requests_total{service_name="card-service", method=~"CreateCard|UpdateCard|TrashedCard|RestoreCard|DeleteCardPermanent|RestoreAllCard|DeleteAllCardPermanent|ToggleCardStatus|UpdateCreditLimit|RedeemPoints"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: card_command_service
+        annotations:
+          summary: "No traffic on card command service"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_CardQueryService
+        expr: increase(golang_app_requests_total{service_name="card-service", method=~"Find.*|GetStatement|GetStatementsByCard|GetBillingCyclesByCardNumber|TriggerBillingCycle", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: card_query_service
+        annotations:
+          summary: "High failure rate on card query service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_CardQueryService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="card-service", method=~"Find.*|GetStatement|GetStatementsByCard|GetBillingCyclesByCardNumber|TriggerBillingCycle"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: card_query_service
+        annotations:
+          summary: "High latency on card query service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_CardQueryService
+        expr: rate(golang_app_requests_total{service_name="card-service", method=~"Find.*|GetStatement|GetStatementsByCard|GetBillingCyclesByCardNumber|TriggerBillingCycle"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: card_query_service
+        annotations:
+          summary: "No traffic on card query service"
+          description: "No requests received in the last 5 minutes."

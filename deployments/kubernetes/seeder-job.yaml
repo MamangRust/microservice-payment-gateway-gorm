@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seeder
+  namespace: payment-gateway
+spec:
+  template:
+    spec:
+      containers:
+        - name: seeder
+          image: postgres:17-alpine
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+          command: ["sh", "-c"]
+          args:
+            - |
+              until pg_isready -h postgres -p 5432 -U DRAGON; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+              psql -h postgres -U DRAGON -d PAYMENT_GATEWAY -f /seeder/seeder.sql
+          volumeMounts:
+            - name: seeder-sql
+              mountPath: /seeder
+      volumes:
+        - name: seeder-sql
+          configMap:
+            name: seeder-sql
+      restartPolicy: OnFailure

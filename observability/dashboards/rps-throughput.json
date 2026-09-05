@@ -1,0 +1,154 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "RPS & Throughput",
+    "uid": "rps-throughput",
+    "schemaVersion": 40,
+    "tags": ["rps", "throughput", "performance"],
+    "timezone": "browser",
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Cache Ops/s",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 4, "h": 3},
+        "targets": [{"expr": "sum(rate(golang_app_cache_operation_duration_seconds_count[1m]))", "refId": "A"}],
+        "fieldConfig": {"defaults": {"unit": "rps", "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
+        "options": {"colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 2,
+        "title": "Active Services",
+        "type": "stat",
+        "gridPos": {"x": 4, "y": 0, "w": 4, "h": 3},
+        "targets": [{"expr": "count(golang_app_go_goroutine_count)", "refId": "A"}],
+        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 10}]}}},
+        "options": {"colorMode": "background", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 3,
+        "title": "Kafka Consumer Lag (Total)",
+        "type": "stat",
+        "gridPos": {"x": 8, "y": 0, "w": 4, "h": 3},
+        "targets": [{"expr": "sum(kafka_consumergroup_lag_sum)", "refId": "A"}],
+        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}]}}},
+        "options": {"colorMode": "background", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 4,
+        "title": "Avg Goroutines / Service",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 4, "h": 3},
+        "targets": [{"expr": "avg(golang_app_go_goroutine_count)", "refId": "A"}],
+        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
+        "options": {"colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 5,
+        "title": "Total Request",
+        "type": "stat",
+        "gridPos": {"x": 16, "y": 0, "w": 8, "h": 3},
+        "targets": [{"expr": "sum(increase(golang_app_requests_total[$__range]))", "refId": "A"}],
+        "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
+        "options": {"colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 10,
+        "title": "Cache Ops Rate per Service (get/set only)",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 3, "w": 8, "h": 8},
+        "targets": [{"expr": "rate(golang_app_cache_operation_duration_seconds_count{operation=~\"get|set\"}[1m])", "legendFormat": "{{service_name}} - {{operation}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "rps"}}
+      },
+      {
+        "id": 11,
+        "title": "Cache Hit Rate per Service",
+        "type": "timeseries",
+        "gridPos": {"x": 8, "y": 3, "w": 8, "h": 8},
+        "targets": [{"expr": "rate(golang_app_cache_hits_total[1m]) / (rate(golang_app_cache_hits_total[1m]) + rate(golang_app_cache_misses_total[1m]))", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "percentunit", "min": 0, "max": 1}},
+        "targets": [{"expr": "rate(golang_app_go_memory_allocated_bytes_total[1m]) / 1024", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "KiB/s"}}
+      },
+      {
+        "id": 12,
+        "title": "Total Request Rate (RPS) per Service",
+        "type": "timeseries",
+        "gridPos": {"x": 16, "y": 3, "w": 8, "h": 8},
+        "targets": [{"expr": "sum by (service_name) (rate(golang_app_requests_total[1m]))", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "rps"}}
+      },
+      {
+        "id": 20,
+        "title": "Cache Op Duration (p95) per Service",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 11, "w": 8, "h": 8},
+        "targets": [{"expr": "histogram_quantile(0.95, rate(golang_app_cache_operation_duration_seconds_bucket[1m])) * 1000", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "ms"}}
+      },
+      {
+        "id": 21,
+        "title": "Goroutines per Service (concurrency)",
+        "type": "timeseries",
+        "gridPos": {"x": 8, "y": 11, "w": 8, "h": 8},
+        "targets": [{"expr": "golang_app_go_goroutine_count", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}}}
+      },
+      {
+        "id": 13,
+        "title": "Error Rate per Service",
+        "type": "timeseries",
+        "gridPos": {"x": 16, "y": 11, "w": 8, "h": 8},
+        "targets": [{"expr": "sum by (service_name) (rate(golang_app_errors_total[1m]))", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "rps"}}
+      },
+      {
+        "id": 30,
+        "title": "Kafka Consumer Lag per Group",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 19, "w": 12, "h": 8},
+        "targets": [{"expr": "sum by (consumergroup) (kafka_consumergroup_lag_sum)", "legendFormat": "{{consumergroup}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}}}
+      },
+      {
+        "id": 31,
+        "title": "Heap Memory per Service",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 19, "w": 12, "h": 8},
+        "targets": [{"expr": "golang_app_go_memory_used_bytes / 1024 / 1024", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "MiB"}}
+      },
+      {
+        "id": 40,
+        "title": "CPU Profile Flamegraph (hot path)",
+        "type": "flamegraph",
+        "gridPos": {"x": 0, "y": 27, "w": 24, "h": 12},
+        "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+        "targets": [{
+          "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+          "queryType": "profile",
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{}",
+          "refId": "A"
+        }]
+      },
+      {
+        "id": 41,
+        "title": "Alloc Objects Flamegraph",
+        "type": "flamegraph",
+        "gridPos": {"x": 0, "y": 39, "w": 24, "h": 12},
+        "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+        "targets": [{
+          "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+          "queryType": "profile",
+          "profileTypeId": "memory:alloc_objects:count:space:bytes",
+          "labelSelector": "{}",
+          "refId": "A"
+        }]
+      }
+    ],
+    "time": {"from": "now-15m", "to": "now"}
+  },
+  "overwrite": true
+}

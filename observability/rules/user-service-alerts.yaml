@@ -1,0 +1,65 @@
+# User service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go, exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+groups:
+  - name: user-service-alerts
+    rules:
+      - alert: HighFailureRate_UserCommandService
+        expr: increase(golang_app_requests_total{service_name="user-service", method=~"CreateUser|UpdateUser|TrashedUser|RestoreUser|DeleteUserPermanent|RestoreAllUser|DeleteAllUserPermanent|UpdateIsVerified|UpdatePassword", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: user_command_service
+        annotations:
+          summary: "High failure rate on user command service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_UserCommandService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="user-service", method=~"CreateUser|UpdateUser|TrashedUser|RestoreUser|DeleteUserPermanent|RestoreAllUser|DeleteAllUserPermanent|UpdateIsVerified|UpdatePassword"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: user_command_service
+        annotations:
+          summary: "High latency on user command service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_UserCommandService
+        expr: rate(golang_app_requests_total{service_name="user-service", method=~"CreateUser|UpdateUser|TrashedUser|RestoreUser|DeleteUserPermanent|RestoreAllUser|DeleteAllUserPermanent|UpdateIsVerified|UpdatePassword"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: user_command_service
+        annotations:
+          summary: "No traffic on user command service"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_UserQueryService
+        expr: increase(golang_app_requests_total{service_name="user-service", method=~"Find.*", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: user_query_service
+        annotations:
+          summary: "High failure rate on user query service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_UserQueryService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="user-service", method=~"Find.*"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: user_query_service
+        annotations:
+          summary: "High latency on user query service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_UserQueryService
+        expr: rate(golang_app_requests_total{service_name="user-service", method=~"Find.*"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: user_query_service
+        annotations:
+          summary: "No traffic on user query service"
+          description: "No requests received in the last 5 minutes."

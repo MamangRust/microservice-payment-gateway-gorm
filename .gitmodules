@@ -1,0 +1,16 @@
+[submodule "shared"]
+	path = shared
+	url = https://github.com/MamangRust/microservice-payment-gateway-grpc/shared.git
+	branch = main
+[submodule "pkg"]
+	path = pkg
+	url = https://github.com/MamangRust/microservice-payment-gateway-grpc/pkg.git
+	branch = main
+[submodule "proto"]
+	path = proto
+	url = https://github.com/MamangRust/microservice-payment-gateway-proto.git
+	branch = main
+[submodule "pb"]
+	path = pb
+	url = https://github.com/MamangRust/microservice-payment-gateway-pb.git
+	branch = main

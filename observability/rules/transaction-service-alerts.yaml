@@ -1,0 +1,66 @@
+# Transaction service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go (requests_total /
+# request_duration_seconds with method/status/protocol labels), exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+groups:
+  - name: transaction-services-alerts
+    rules:
+      - alert: HighFailureRate_TransactionCommandService
+        expr: increase(golang_app_requests_total{service_name="transaction-service", method=~"CreateTransaction|UpdateTransaction|TrashedTransaction|RestoreTransaction|DeleteTransactionPermanent|RestoreAllTransaction|DeleteAllTransactionPermanent", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: transaction_command_service
+        annotations:
+          summary: "High failure rate on transaction command service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_TransactionCommandService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="transaction-service", method=~"CreateTransaction|UpdateTransaction|TrashedTransaction|RestoreTransaction|DeleteTransactionPermanent|RestoreAllTransaction|DeleteAllTransactionPermanent"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: transaction_command_service
+        annotations:
+          summary: "High latency on transaction command service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_TransactionCommandService
+        expr: rate(golang_app_requests_total{service_name="transaction-service", method=~"CreateTransaction|UpdateTransaction|TrashedTransaction|RestoreTransaction|DeleteTransactionPermanent|RestoreAllTransaction|DeleteAllTransactionPermanent"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: transaction_command_service
+        annotations:
+          summary: "No traffic on transaction command service"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_TransactionQueryService
+        expr: increase(golang_app_requests_total{service_name="transaction-service", method=~"Find.*", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: transaction_query_service
+        annotations:
+          summary: "High failure rate on transaction query service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_TransactionQueryService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="transaction-service", method=~"Find.*"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: transaction_query_service
+        annotations:
+          summary: "High latency on transaction query service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_TransactionQueryService
+        expr: rate(golang_app_requests_total{service_name="transaction-service", method=~"Find.*"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: transaction_query_service
+        annotations:
+          summary: "No traffic on transaction query service"
+          description: "No requests received in the last 5 minutes."

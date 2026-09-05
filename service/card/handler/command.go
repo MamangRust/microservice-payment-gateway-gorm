@@ -1,0 +1,252 @@
+package handler
+
+import (
+	"context"
+	"time"
+
+	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/service/card/service"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors"
+	card_errors "github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors/card_errors/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+)
+
+type cardCommandService struct {
+	pb.UnimplementedCardCommandServiceServer
+	cardCommand service.CardCommandService
+}
+
+func NewCardCommandHandleGrpc(cardCommand service.CardCommandService) CardCommandService {
+	return &cardCommandService{
+		cardCommand: cardCommand,
+	}
+}
+
+func (s *cardCommandService) CreateCard(ctx context.Context, req *pb.CreateCardRequest) (*pb.ApiResponseCard, error) {
+	request := requests.CreateCardRequest{
+		UserID:       int(req.UserId),
+		CardType:     req.CardType,
+		ExpireDate:   req.ExpireDate.AsTime(),
+		CVV:          req.Cvv,
+		CardProvider: req.CardProvider,
+	}
+
+	if err := request.Validate(); err != nil {
+		return nil, card_errors.ErrGrpcValidateCreateCardRequest
+	}
+
+	res, err := s.cardCommand.CreateCard(ctx, &request)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	return &pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully created card",
+		Data:    cardResponse(res),
+	}, nil
+}
+
+func (s *cardCommandService) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*pb.ApiResponseCard, error) {
+	request := requests.UpdateCardRequest{
+		CardID:       int(req.CardId),
+		UserID:       int(req.UserId),
+		CardType:     req.CardType,
+		ExpireDate:   req.ExpireDate.AsTime(),
+		CVV:          req.Cvv,
+		CardProvider: req.CardProvider,
+	}
+
+	if err := request.Validate(); err != nil {
+		return nil, card_errors.ErrGrpcValidateUpdateCardRequest
+	}
+
+	res, err := s.cardCommand.UpdateCard(ctx, &request)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	return &pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully updated card",
+		Data:    cardResponse(res),
+	}, nil
+}
+
+func (s *cardCommandService) TrashedCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
+	id := int(req.GetCardId())
+	if id == 0 {
+		return nil, card_errors.ErrGrpcInvalidCardID
+	}
+
+	res, err := s.cardCommand.TrashedCard(ctx, id)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	var deletedAt *wrapperspb.StringValue
+	if res.DeletedAt != nil {
+		deletedAt = wrapperspb.String(res.DeletedAt.Format(time.RFC3339))
+	}
+
+	return &pb.ApiResponseCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed card",
+		Data: &pb.CardResponseDeleteAt{
+			Id:         int32(res.CardID),
+			UserId:     int32(res.UserID),
+			CardNumber: res.CardNumber,
+			CardType:   res.CardType,
+			Cvv:        res.Cvv,
+			ExpireDate: formatCardTimeTim(res.ExpireDate),
+			CreatedAt:  formatCardTime(res.CreatedAt),
+			UpdatedAt:  formatCardTime(res.UpdatedAt),
+			DeletedAt:  deletedAt,
+		},
+	}, nil
+}
+
+func (s *cardCommandService) RestoreCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
+	id := int(req.GetCardId())
+	if id == 0 {
+		return nil, card_errors.ErrGrpcInvalidCardID
+	}
+
+	res, err := s.cardCommand.RestoreCard(ctx, id)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	return &pb.ApiResponseCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored card",
+		Data: &pb.CardResponseDeleteAt{
+			Id:         int32(res.CardID),
+			UserId:     int32(res.UserID),
+			CardNumber: res.CardNumber,
+			CardType:   res.CardType,
+			Cvv:        res.Cvv,
+			ExpireDate: formatCardTimeTim(res.ExpireDate),
+			CreatedAt:  formatCardTime(res.CreatedAt),
+			UpdatedAt:  formatCardTime(res.UpdatedAt),
+		},
+	}, nil
+}
+
+func (s *cardCommandService) DeleteCardPermanent(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDelete, error) {
+	id := int(req.GetCardId())
+	if id == 0 {
+		return nil, card_errors.ErrGrpcInvalidCardID
+	}
+	_, err := s.cardCommand.DeleteCardPermanent(ctx, id)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &pb.ApiResponseCardDelete{
+		Status:  "success",
+		Message: "Successfully deleted card",
+	}, nil
+}
+
+func (s *cardCommandService) RestoreAllCard(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseCardAll, error) {
+	_, err := s.cardCommand.RestoreAllCard(ctx)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &pb.ApiResponseCardAll{Status: "success", Message: "Successfully restore card"}, nil
+}
+
+func (s *cardCommandService) DeleteAllCardPermanent(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseCardAll, error) {
+	_, err := s.cardCommand.DeleteAllCardPermanent(ctx)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &pb.ApiResponseCardAll{Status: "success", Message: "Successfully delete card permanent"}, nil
+}
+
+func (s *cardCommandService) ToggleCardStatus(ctx context.Context, req *pb.ToggleCardStatusRequest) (*pb.ApiResponseCard, error) {
+	if req.GetCardId() <= 0 {
+		return nil, card_errors.ErrGrpcInvalidCardID
+	}
+	request := &requests.ToggleCardStatusRequest{CardID: int(req.GetCardId())}
+	if err := request.Validate(); err != nil {
+		return nil, card_errors.ErrGrpcValidateToggleCardStatus
+	}
+	res, err := s.cardCommand.ToggleCardStatus(ctx, request)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &pb.ApiResponseCard{Status: "success", Message: "Successfully toggled card status", Data: cardResponseFull(res)}, nil
+}
+
+func (s *cardCommandService) UpdateCreditLimit(ctx context.Context, req *pb.UpdateCreditLimitRequest) (*pb.ApiResponseCard, error) {
+	if req.GetCardId() <= 0 {
+		return nil, card_errors.ErrGrpcInvalidCardID
+	}
+	request := &requests.UpdateCreditLimitRequest{CardID: int(req.GetCardId()), CreditLimit: int(req.GetCreditLimit())}
+	if err := request.Validate(); err != nil {
+		return nil, card_errors.ErrGrpcValidateUpdateCreditLimit
+	}
+	res, err := s.cardCommand.UpdateCreditLimit(ctx, request)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &pb.ApiResponseCard{Status: "success", Message: "Successfully updated credit limit", Data: cardResponseFull(res)}, nil
+}
+
+func (s *cardCommandService) RedeemPoints(ctx context.Context, req *pb.RedeemPointsRequest) (*pb.ApiResponseCard, error) {
+	if req.GetCardId() <= 0 {
+		return nil, card_errors.ErrGrpcInvalidCardID
+	}
+	request := &requests.RedeemPointsRequest{CardID: int(req.GetCardId()), Points: int(req.GetPoints())}
+	if err := request.Validate(); err != nil {
+		return nil, card_errors.ErrGrpcValidateRedeemPoints
+	}
+	res, err := s.cardCommand.RedeemPoints(ctx, request)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &pb.ApiResponseCard{Status: "success", Message: "Successfully redeemed reward points", Data: cardResponseFull(res)}, nil
+}
+
+func (s *cardCommandService) ProcessBillingCycles(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	if err := s.cardCommand.ProcessBillingCycles(ctx); err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func cardResponse(res *models.Card) *pb.CardResponse {
+	return &pb.CardResponse{
+		Id:           int32(res.CardID),
+		UserId:       int32(res.UserID),
+		CardNumber:   res.CardNumber,
+		CardType:     res.CardType,
+		CardProvider: res.CardProvider,
+		Cvv:          res.Cvv,
+		ExpireDate:   formatCardTimeTim(res.ExpireDate),
+		CreatedAt:    formatCardTime(res.CreatedAt),
+		UpdatedAt:    formatCardTime(res.UpdatedAt),
+	}
+}
+
+func cardResponseFull(res *models.Card) *pb.CardResponse {
+	return &pb.CardResponse{
+		Id:                 int32(res.CardID),
+		UserId:             int32(res.UserID),
+		CardNumber:         res.CardNumber,
+		CardType:           res.CardType,
+		CardProvider:       res.CardProvider,
+		Cvv:                res.Cvv,
+		ExpireDate:         formatCardTimeTim(res.ExpireDate),
+		Status:             res.Status,
+		CreditLimit:        res.CreditLimit,
+		OutstandingBalance: int32(res.OutstandingBalance),
+		RewardPoints:       res.RewardPoints,
+		CreatedAt:          formatCardTime(res.CreatedAt),
+		UpdatedAt:          formatCardTime(res.UpdatedAt),
+	}
+}

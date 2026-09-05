@@ -1,0 +1,357 @@
+# API Gateway alerts.
+# The gateway records every HTTP request through shared/observability with the
+# service_name label "apigateway-service" and the route method (e.g. "login",
+# "create-topup", "find-all-transfers") as the method label, exported by the
+# OTel collector under the golang_app namespace.
+groups:
+  - name: apigateway-alerts
+    rules:
+      - alert: AuthHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"login|register|GetMe|refresh-token", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"login|register|GetMe|refresh-token"}[1m])) > 0.1
+        for: 2m
+        labels:
+          service: auth
+          severity: critical
+        annotations:
+          summary: "High error rate on auth endpoints ({{ $value }}%)"
+          description: "More than 10% of auth requests are failing."
+
+      - alert: AuthHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"login|register|GetMe|refresh-token"}[5m])) > 1
+        for: 5m
+        labels:
+          service: auth
+          severity: warning
+        annotations:
+          summary: "Auth endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for auth endpoints > 1s."
+
+      - alert: AuthNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"login|register|GetMe|refresh-token"}[5m]) == 0
+        for: 5m
+        labels:
+          service: auth
+          severity: warning
+        annotations:
+          summary: "No traffic on auth endpoints"
+          description: "No incoming auth requests for 5 minutes."
+
+      - alert: CardHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-card|update-card|trash-card|restore-card|delete-card-permanent|find-all-cards|find-card-by-id|find-cards-by-card-number", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-card|update-card|trash-card|restore-card|delete-card-permanent|find-all-cards|find-card-by-id|find-cards-by-card-number"}[1m])) > 0.1
+        for: 2m
+        labels:
+          service: card
+          severity: critical
+        annotations:
+          summary: "High error rate on card endpoints ({{ $value }}%)"
+          description: "More than 10% of card requests are failing."
+
+      - alert: CardHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-card|update-card|trash-card|restore-card|delete-card-permanent|find-all-cards|find-card-by-id|find-cards-by-card-number"}[5m])) > 1
+        for: 5m
+        labels:
+          service: card
+          severity: warning
+        annotations:
+          summary: "Card endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for card endpoints > 1s."
+
+      - alert: CardNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-card|update-card|trash-card|restore-card|delete-card-permanent|find-all-cards|find-card-by-id|find-cards-by-card-number"}[5m]) == 0
+        for: 5m
+        labels:
+          service: card
+          severity: warning
+        annotations:
+          summary: "No traffic on card endpoints"
+          description: "No incoming card requests for 5 minutes."
+
+      - alert: MerchantHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-merchant|update-merchant|trash-merchant|restore-merchant|delete-merchant-permanent|find-all-merchants|find-merchant-by-id|find-merchant-by-api-key", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-merchant|update-merchant|trash-merchant|restore-merchant|delete-merchant-permanent|find-all-merchants|find-merchant-by-id|find-merchant-by-api-key"}[1m])) > 0.1
+        for: 2m
+        labels:
+          service: merchant
+          severity: critical
+        annotations:
+          summary: "High error rate on merchant endpoints ({{ $value }}%)"
+          description: "More than 10% of merchant requests are failing."
+
+      - alert: MerchantHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-merchant|update-merchant|trash-merchant|restore-merchant|delete-merchant-permanent|find-all-merchants|find-merchant-by-id|find-merchant-by-api-key"}[5m])) > 1
+        for: 5m
+        labels:
+          service: merchant
+          severity: warning
+        annotations:
+          summary: "Merchant endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for merchant endpoints > 1s."
+
+      - alert: MerchantNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-merchant|update-merchant|trash-merchant|restore-merchant|delete-merchant-permanent|find-all-merchants|find-merchant-by-id|find-merchant-by-api-key"}[5m]) == 0
+        for: 5m
+        labels:
+          service: merchant
+          severity: warning
+        annotations:
+          summary: "No traffic on merchant endpoints"
+          description: "No incoming merchant requests for 5 minutes."
+
+      - alert: RoleHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-role|update-role|trash-role|restore-role|delete-role-permanent|find-all-roles|find-role-by-id|create-user-role|delete-user-role", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-role|update-role|trash-role|restore-role|delete-role-permanent|find-all-roles|find-role-by-id|create-user-role|delete-user-role"}[1m])) > 0.1
+        for: 2m
+        labels:
+          service: role
+          severity: critical
+        annotations:
+          summary: "High error rate on role endpoints ({{ $value }}%)"
+          description: "More than 10% of role requests are failing."
+
+      - alert: RoleHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-role|update-role|trash-role|restore-role|delete-role-permanent|find-all-roles|find-role-by-id|create-user-role|delete-user-role"}[5m])) > 1
+        for: 5m
+        labels:
+          service: role
+          severity: warning
+        annotations:
+          summary: "Role endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for role endpoints > 1s."
+
+      - alert: RoleNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-role|update-role|trash-role|restore-role|delete-role-permanent|find-all-roles|find-role-by-id|create-user-role|delete-user-role"}[5m]) == 0
+        for: 5m
+        labels:
+          service: role
+          severity: warning
+        annotations:
+          summary: "No traffic on role endpoints"
+          description: "No incoming role requests for 5 minutes."
+
+      - alert: SaldoHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-saldo|update-saldo|trash-saldo|restore-saldo|delete-saldo-permanent|apply-saldo-adjustment|find-all-saldos|find-saldo-by-id|find-saldo-by-card-number", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-saldo|update-saldo|trash-saldo|restore-saldo|delete-saldo-permanent|apply-saldo-adjustment|find-all-saldos|find-saldo-by-id|find-saldo-by-card-number"}[1m])) > 0.1
+        for: 2m
+        labels:
+          service: saldo
+          severity: critical
+        annotations:
+          summary: "High error rate on saldo endpoints ({{ $value }}%)"
+          description: "More than 10% of saldo requests are failing."
+
+      - alert: SaldoHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-saldo|update-saldo|trash-saldo|restore-saldo|delete-saldo-permanent|apply-saldo-adjustment|find-all-saldos|find-saldo-by-id|find-saldo-by-card-number"}[5m])) > 1
+        for: 5m
+        labels:
+          service: saldo
+          severity: warning
+        annotations:
+          summary: "Saldo endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for saldo endpoints > 1s."
+
+      - alert: SaldoNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-saldo|update-saldo|trash-saldo|restore-saldo|delete-saldo-permanent|apply-saldo-adjustment|find-all-saldos|find-saldo-by-id|find-saldo-by-card-number"}[5m]) == 0
+        for: 5m
+        labels:
+          service: saldo
+          severity: warning
+        annotations:
+          summary: "No traffic on saldo endpoints"
+          description: "No incoming saldo requests for 5 minutes."
+
+      - alert: TopupHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-topup|update-topup|trash-topup|restore-topup|delete-topup-permanent|find-all-topups|find-topup-by-id", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-topup|update-topup|trash-topup|restore-topup|delete-topup-permanent|find-all-topups|find-topup-by-id"}[1m])) > 0.05
+        for: 2m
+        labels:
+          service: topup
+          severity: critical
+        annotations:
+          summary: "High error rate on topup endpoints ({{ $value }}%)"
+          description: "More than 5% of topup requests are failing."
+
+      - alert: TopupHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-topup|update-topup|trash-topup|restore-topup|delete-topup-permanent|find-all-topups|find-topup-by-id"}[5m])) > 1
+        for: 5m
+        labels:
+          service: topup
+          severity: warning
+        annotations:
+          summary: "Topup endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for topup endpoints > 1s."
+
+      - alert: TopupNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-topup|update-topup|trash-topup|restore-topup|delete-topup-permanent|find-all-topups|find-topup-by-id"}[5m]) == 0
+        for: 5m
+        labels:
+          service: topup
+          severity: warning
+        annotations:
+          summary: "No traffic on topup endpoints"
+          description: "No incoming topup requests for 5 minutes."
+
+      - alert: TransactionHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-transaction|update-transaction|trash-transaction|restore-transaction|delete-transaction-permanent|find-all-transactions|find-transaction-by-id", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-transaction|update-transaction|trash-transaction|restore-transaction|delete-transaction-permanent|find-all-transactions|find-transaction-by-id"}[1m])) > 0.05
+        for: 2m
+        labels:
+          service: transaction
+          severity: critical
+        annotations:
+          summary: "High error rate on transaction endpoints ({{ $value }}%)"
+          description: "More than 5% of transaction requests are failing."
+
+      - alert: TransactionHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-transaction|update-transaction|trash-transaction|restore-transaction|delete-transaction-permanent|find-all-transactions|find-transaction-by-id"}[5m])) > 1
+        for: 5m
+        labels:
+          service: transaction
+          severity: warning
+        annotations:
+          summary: "Transaction endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for transaction endpoints > 1s."
+
+      - alert: TransactionNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-transaction|update-transaction|trash-transaction|restore-transaction|delete-transaction-permanent|find-all-transactions|find-transaction-by-id"}[5m]) == 0
+        for: 5m
+        labels:
+          service: transaction
+          severity: warning
+        annotations:
+          summary: "No traffic on transaction endpoints"
+          description: "No incoming transaction requests for 5 minutes."
+
+      - alert: TransferHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-transfer|update-transfer|trash-transfer|restore-transfer|delete-transfer-permanent|find-all-transfers|find-transfer-by-id", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-transfer|update-transfer|trash-transfer|restore-transfer|delete-transfer-permanent|find-all-transfers|find-transfer-by-id"}[1m])) > 0.05
+        for: 2m
+        labels:
+          service: transfer
+          severity: critical
+        annotations:
+          summary: "High error rate on transfer endpoints ({{ $value }}%)"
+          description: "More than 5% of transfer requests are failing."
+
+      - alert: TransferHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-transfer|update-transfer|trash-transfer|restore-transfer|delete-transfer-permanent|find-all-transfers|find-transfer-by-id"}[5m])) > 1
+        for: 5m
+        labels:
+          service: transfer
+          severity: warning
+        annotations:
+          summary: "Transfer endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for transfer endpoints > 1s."
+
+      - alert: TransferNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-transfer|update-transfer|trash-transfer|restore-transfer|delete-transfer-permanent|find-all-transfers|find-transfer-by-id"}[5m]) == 0
+        for: 5m
+        labels:
+          service: transfer
+          severity: warning
+        annotations:
+          summary: "No traffic on transfer endpoints"
+          description: "No incoming transfer requests for 5 minutes."
+
+      - alert: UserHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-user|update-user|trash-user|restore-user|delete-user-permanent|find-all-users|find-user-by-id", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-user|update-user|trash-user|restore-user|delete-user-permanent|find-all-users|find-user-by-id"}[1m])) > 0.1
+        for: 2m
+        labels:
+          service: user
+          severity: critical
+        annotations:
+          summary: "High error rate on user endpoints ({{ $value }}%)"
+          description: "More than 10% of user requests are failing."
+
+      - alert: UserHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-user|update-user|trash-user|restore-user|delete-user-permanent|find-all-users|find-user-by-id"}[5m])) > 1
+        for: 5m
+        labels:
+          service: user
+          severity: warning
+        annotations:
+          summary: "User endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for user endpoints > 1s."
+
+      - alert: UserNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-user|update-user|trash-user|restore-user|delete-user-permanent|find-all-users|find-user-by-id"}[5m]) == 0
+        for: 5m
+        labels:
+          service: user
+          severity: warning
+        annotations:
+          summary: "No traffic on user endpoints"
+          description: "No incoming user requests for 5 minutes."
+
+      - alert: WithdrawalHighErrorRate
+        expr: |
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-withdraw|update-withdraw|trash-withdraw|restore-withdraw|delete-withdraw-permanent|find-all-withdraws|find-withdraw-by-id", status="error"}[1m]))
+          /
+          sum(rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-withdraw|update-withdraw|trash-withdraw|restore-withdraw|delete-withdraw-permanent|find-all-withdraws|find-withdraw-by-id"}[1m])) > 0.05
+        for: 2m
+        labels:
+          service: withdrawal
+          severity: critical
+        annotations:
+          summary: "High error rate on withdrawal endpoints ({{ $value }}%)"
+          description: "More than 5% of withdrawal requests are failing."
+
+      - alert: WithdrawalHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="apigateway-service", method=~"create-withdraw|update-withdraw|trash-withdraw|restore-withdraw|delete-withdraw-permanent|find-all-withdraws|find-withdraw-by-id"}[5m])) > 1
+        for: 5m
+        labels:
+          service: withdrawal
+          severity: warning
+        annotations:
+          summary: "Withdrawal endpoints latency is high ({{ $value }}s)"
+          description: "95th percentile latency for withdrawal endpoints > 1s."
+
+      - alert: WithdrawalNoTraffic
+        expr: |
+          rate(golang_app_requests_total{service_name="apigateway-service", method=~"create-withdraw|update-withdraw|trash-withdraw|restore-withdraw|delete-withdraw-permanent|find-all-withdraws|find-withdraw-by-id"}[5m]) == 0
+        for: 5m
+        labels:
+          service: withdrawal
+          severity: warning
+        annotations:
+          summary: "No traffic on withdrawal endpoints"
+          description: "No incoming withdrawal requests for 5 minutes."

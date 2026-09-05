@@ -1,0 +1,133 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "RPS HTTP & gRPC",
+    "uid": "rps-http-grpc",
+    "schemaVersion": 40,
+    "tags": ["rps", "http", "grpc", "throughput"],
+    "timezone": "browser",
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "HTTP Throughput (cache ops/s)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 3},
+        "targets": [{"expr": "sum(rate(golang_app_cache_operation_duration_seconds_count{service_name=\"apigateway-service\",operation=~\"get|set\"}[1m]))", "refId": "A"}],
+        "fieldConfig": {"defaults": {"unit": "rps", "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
+        "options": {"colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 2,
+        "title": "gRPC Activity (alloc KiB/s)",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 3},
+        "targets": [{"expr": "sum(rate(golang_app_go_memory_allocated_bytes_total{service_name!=\"apigateway-service\"}[1m])) / 1024", "refId": "A"}],
+        "fieldConfig": {"defaults": {"unit": "KiBs", "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
+        "options": {"colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 3,
+        "title": "gRPC Concurrency",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 3},
+        "targets": [{"expr": "sum(golang_app_go_goroutine_count{service_name!=\"apigateway-service\"})", "refId": "A"}],
+        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
+        "options": {"colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 4,
+        "title": "Kafka Lag (msgs behind)",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 3},
+        "targets": [{"expr": "sum(kafka_consumergroup_lag_sum)", "refId": "A"}],
+        "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}]}}},
+        "options": {"colorMode": "background", "graphMode": "area", "textMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}}
+      },
+      {
+        "id": 10,
+        "title": "🌐 HTTP: Cache Ops Rate (apigateway get/set)",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 3, "w": 12, "h": 8},
+        "targets": [{"expr": "rate(golang_app_cache_operation_duration_seconds_count{service_name=\"apigateway-service\",operation=~\"get|set\"}[1m])", "legendFormat": "{{operation}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 20, "lineWidth": 2, "spanNulls": true}, "unit": "rps"}}
+      },
+      {
+        "id": 11,
+        "title": "🔗 gRPC: Allocation Rate per Service",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 3, "w": 12, "h": 8},
+        "targets": [{"expr": "rate(golang_app_go_memory_allocated_bytes_total{service_name!=\"apigateway-service\"}[1m]) / 1024", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}, "unit": "KiB/s"}}
+      },
+      {
+        "id": 20,
+        "title": "🌐 HTTP: Latency p95 (cache op duration)",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 11, "w": 12, "h": 8},
+        "targets": [{"expr": "histogram_quantile(0.95, rate(golang_app_cache_operation_duration_seconds_bucket{service_name=\"apigateway-service\",operation=~\"get|set\"}[1m])) * 1000", "legendFormat": "p95 - {{operation}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 20, "lineWidth": 2, "spanNulls": true}, "unit": "ms"}}
+      },
+      {
+        "id": 21,
+        "title": "🔗 gRPC: Goroutines per Service (concurrency)",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 11, "w": 12, "h": 8},
+        "targets": [{"expr": "golang_app_go_goroutine_count{service_name!=\"apigateway-service\"}", "legendFormat": "{{service_name}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}}}
+      },
+      {
+        "id": 30,
+        "title": "📨 Kafka: Consumer Lag per Group",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 19, "w": 12, "h": 8},
+        "targets": [{"expr": "sum by (consumergroup) (kafka_consumergroup_lag_sum)", "legendFormat": "{{consumergroup}}", "refId": "A"}],
+        "fieldConfig": {"defaults": {"custom": {"fillOpacity": 15, "lineWidth": 2, "spanNulls": true}}}
+      },
+      {
+        "id": 31,
+        "title": "📨 Kafka: Topics Partition Count",
+        "type": "bargauge",
+        "gridPos": {"x": 12, "y": 19, "w": 12, "h": 8},
+        "targets": [{"expr": "kafka_topic_partitions", "legendFormat": "{{topic}}", "refId": "A"}]
+      },
+      {
+        "id": 40,
+        "title": "🔥 HTTP: API Gateway CPU Flamegraph",
+        "type": "flamegraph",
+        "gridPos": {"x": 0, "y": 27, "w": 12, "h": 12},
+        "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+        "targets": [{
+          "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+          "queryType": "profile",
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"apigateway-service\"}",
+          "refId": "A"
+        }]
+      },
+      {
+        "id": 41,
+        "title": "🔥 gRPC: Auth Service CPU Flamegraph",
+        "type": "flamegraph",
+        "gridPos": {"x": 12, "y": 27, "w": 12, "h": 12},
+        "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+        "targets": [{
+          "datasource": {"type": "grafana-pyroscope-datasource", "uid": "efttxrdc16r5sa"},
+          "queryType": "profile",
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"auth-service\"}",
+          "refId": "A"
+        }]
+      },
+      {
+        "id": 50,
+        "title": "ℹ️  Note: true HTTP/gRPC RPS (metric golang_app_requests_total sudah punya label protocol)",
+        "type": "text",
+        "gridPos": {"x": 0, "y": 39, "w": 24, "h": 2},
+        "options": {"mode": "markdown", "content": "## ℹ️ True HTTP vs gRPC RPS available now\\\\n\\\\nMetric `golang_app_requests_total` sudah punya label **method**, **status**, dan **protocol** (di-record oleh `shared/observability/tracing_metrics.go` → `RecordMetrics()`).\\\\nGunakan `rate(golang_app_requests_total{protocol=\"http\"}[1m])` untuk HTTP RPS dan `rate(golang_app_requests_total{protocol=\"grpc\"}[1m])` untuk gRPC RPS.\\\\nPanel di atas masih memakai proxy (cache ops / alloc rate) — bisa diganti dengan query ini untuk RPS yang akurat."}
+      }
+    ],
+    "time": {"from": "now-15m", "to": "now"}
+  },
+  "overwrite": true
+}

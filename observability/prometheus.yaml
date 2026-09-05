@@ -1,0 +1,51 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - rules/golang-runtime-alerts.yaml
+  - rules/kafka-exporter-alerts.yaml
+  - rules/node-exporter-alerts.yaml
+  - rules/otel-collector-alerts.yaml
+  - rules/apigateway-alerts.yaml
+  - rules/auth-service-alerts.yaml
+  - rules/card-service-alerts.yaml
+  - rules/email-service-alerts.yaml
+  - rules/merchant-service-alerts.yaml
+  - rules/role-service-alerts.yaml
+  - rules/saldo-service-alerts.yaml
+  - rules/topup-service-alerts.yaml
+  - rules/transaction-service-alerts.yaml
+  - rules/transfer-service-alerts.yaml
+  - rules/user-service-alerts.yaml
+  - rules/withdrawal-service-alerts.yaml
+  - rules/financial-slo-alerts.yaml
+
+
+scrape_configs:
+  - job_name: 'golang-app-via-otel'
+    static_configs:
+      - targets: [ 'otel-collector:8889' ]
+        labels:
+          application: 'golang-app'
+          environment: 'production'
+
+  - job_name: "node-exporter"
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ "node-exporter:9100" ]
+        labels:
+          application: "node-exporter"
+
+  - job_name: 'kafka-exporter'
+    static_configs:
+      - targets: ['kafka-exporter:9308']
+        labels:
+          application: 'Kafka Exporter'
+          environment: 'production'

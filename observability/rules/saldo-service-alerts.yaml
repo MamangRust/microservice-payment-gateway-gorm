@@ -1,0 +1,65 @@
+# Saldo service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go, exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+groups:
+  - name: saldo-services-alerts
+    rules:
+      - alert: HighFailureRate_SaldoCommandService
+        expr: increase(golang_app_requests_total{service_name="saldo-service", method=~"CreateSaldo|UpdateSaldo|DebitSaldo|CreditSaldo|ApplySaldoAdjustment|UpdateSaldoWithdraw|TrashSaldo|RestoreSaldo|DeleteSaldoPermanent|RestoreAllSaldo|DeleteAllSaldoPermanent", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: saldo_command_service
+        annotations:
+          summary: "High failure rate on saldo command service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_SaldoCommandService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="saldo-service", method=~"CreateSaldo|UpdateSaldo|DebitSaldo|CreditSaldo|ApplySaldoAdjustment|UpdateSaldoWithdraw|TrashSaldo|RestoreSaldo|DeleteSaldoPermanent|RestoreAllSaldo|DeleteAllSaldoPermanent"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: saldo_command_service
+        annotations:
+          summary: "High latency on saldo command service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_SaldoCommandService
+        expr: rate(golang_app_requests_total{service_name="saldo-service", method=~"CreateSaldo|UpdateSaldo|DebitSaldo|CreditSaldo|ApplySaldoAdjustment|UpdateSaldoWithdraw|TrashSaldo|RestoreSaldo|DeleteSaldoPermanent|RestoreAllSaldo|DeleteAllSaldoPermanent"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: saldo_command_service
+        annotations:
+          summary: "No traffic on saldo command service"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_SaldoQueryService
+        expr: increase(golang_app_requests_total{service_name="saldo-service", method=~"Find.*", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: saldo_query_service
+        annotations:
+          summary: "High failure rate on saldo query service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_SaldoQueryService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="saldo-service", method=~"Find.*"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: saldo_query_service
+        annotations:
+          summary: "High latency on saldo query service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_SaldoQueryService
+        expr: rate(golang_app_requests_total{service_name="saldo-service", method=~"Find.*"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: saldo_query_service
+        annotations:
+          summary: "No traffic on saldo query service"
+          description: "No requests received in the last 5 minutes."

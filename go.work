@@ -1,0 +1,22 @@
+go 1.25.7
+
+use (
+	./pb
+	./pkg
+	./service/apigateway
+	./service/auth
+	./service/card
+	./service/email
+	./service/merchant
+	./service/role
+	./service/saldo
+	./service/stats-reader
+	./service/stats-writer
+	./service/topup
+	./service/transaction
+	./service/transfer
+	./service/user
+	./service/withdraw
+	./shared
+	./tests
+)

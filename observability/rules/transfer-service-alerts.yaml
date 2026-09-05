@@ -1,0 +1,65 @@
+# Transfer service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go, exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+groups:
+  - name: transfer-services-alerts
+    rules:
+      - alert: HighFailureRate_TransferCommandService
+        expr: increase(golang_app_requests_total{service_name="transfer-service", method=~"CreateTransaction|UpdateTransaction|TrashedTransfer|RestoreTransfer|DeleteTransferPermanent|RestoreAllTransfer|DeleteAllTransferPermanent", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: transfer_command_service
+        annotations:
+          summary: "High failure rate on transfer command service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_TransferCommandService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="transfer-service", method=~"CreateTransaction|UpdateTransaction|TrashedTransfer|RestoreTransfer|DeleteTransferPermanent|RestoreAllTransfer|DeleteAllTransferPermanent"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: transfer_command_service
+        annotations:
+          summary: "High latency on transfer command service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_TransferCommandService
+        expr: rate(golang_app_requests_total{service_name="transfer-service", method=~"CreateTransaction|UpdateTransaction|TrashedTransfer|RestoreTransfer|DeleteTransferPermanent|RestoreAllTransfer|DeleteAllTransferPermanent"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: transfer_command_service
+        annotations:
+          summary: "No traffic on transfer command service"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_TransferQueryService
+        expr: increase(golang_app_requests_total{service_name="transfer-service", method=~"Find.*", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: transfer_query_service
+        annotations:
+          summary: "High failure rate on transfer query service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_TransferQueryService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="transfer-service", method=~"Find.*"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: transfer_query_service
+        annotations:
+          summary: "High latency on transfer query service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_TransferQueryService
+        expr: rate(golang_app_requests_total{service_name="transfer-service", method=~"Find.*"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: transfer_query_service
+        annotations:
+          summary: "No traffic on transfer query service"
+          description: "No requests received in the last 5 minutes."

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stats-reader
+  namespace: payment-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stats-reader
+  template:
+    metadata:
+      labels:
+        app: stats-reader
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: init-log-permission
+          image: busybox:1.35
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "[INIT] Setting ownership for /var/log/app"
+              chown -R 1000:1000 /var/log/app
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/log/app
+          securityContext:
+            runAsUser: 0
+      containers:
+        - name: stats-reader
+          image: microservice-payment-gateway-grpc/stats-reader:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: CLICKHOUSE_HOST
+              value: "clickhouse.payment-gateway.svc.cluster.local"
+            - name: CLICKHOUSE_PORT
+              value: "9000"
+          ports:
+            - containerPort: 50062
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/log/app
+      volumes:
+        - name: app-logs
+          persistentVolumeClaim:
+            claimName: app-logs-pvc

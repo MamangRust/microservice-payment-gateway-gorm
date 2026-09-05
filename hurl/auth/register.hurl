@@ -1,0 +1,15 @@
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "firstname": "John",
+  "lastname": "Doe",
+  "email": "john.{{unique_suffix}}@hellodota.com",
+  "password": "password123",
+  "confirm_password": "password123"
+}
+
+HTTP 201
+[Asserts]
+jsonpath "$.status" == "success"
+jsonpath "$.data.email" == "john.{{unique_suffix}}@hellodota.com"

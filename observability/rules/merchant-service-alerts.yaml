@@ -1,0 +1,95 @@
+# Merchant service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go, exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+groups:
+  - name: merchant-service-alerts
+    rules:
+      - alert: HighFailureRate_MerchantCommandService
+        expr: increase(golang_app_requests_total{service_name="merchant-service", method=~"CreateMerchant|UpdateMerchant|UpdateMerchantStatus|TrashedMerchant|RestoreMerchant|DeleteMerchantPermanent|RestoreAllMerchant|DeleteAllMerchantPermanent", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_command_service
+        annotations:
+          summary: "High failure rate on merchant command service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_MerchantCommandService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="merchant-service", method=~"CreateMerchant|UpdateMerchant|UpdateMerchantStatus|TrashedMerchant|RestoreMerchant|DeleteMerchantPermanent|RestoreAllMerchant|DeleteAllMerchantPermanent"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_command_service
+        annotations:
+          summary: "High latency on merchant command service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_MerchantCommandService
+        expr: rate(golang_app_requests_total{service_name="merchant-service", method=~"CreateMerchant|UpdateMerchant|UpdateMerchantStatus|TrashedMerchant|RestoreMerchant|DeleteMerchantPermanent|RestoreAllMerchant|DeleteAllMerchantPermanent"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_command_service
+        annotations:
+          summary: "No traffic on merchant command service"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_MerchantDocumentCommand
+        expr: increase(golang_app_requests_total{service_name="merchant-service", method=~"CreateMerchantDocument|UpdateMerchantDocument|UpdateMerchantDocumentStatus|TrashedMerchantDocument|RestoreMerchantDocument|DeleteMerchantDocumentPermanent|RestoreAllMerchantDocument|DeleteAllMerchantDocumentPermanent", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_document_command
+        annotations:
+          summary: "High failure rate on merchant document command"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_MerchantDocumentCommand
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="merchant-service", method=~"CreateMerchantDocument|UpdateMerchantDocument|UpdateMerchantDocumentStatus|TrashedMerchantDocument|RestoreMerchantDocument|DeleteMerchantDocumentPermanent|RestoreAllMerchantDocument|DeleteAllMerchantDocumentPermanent"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_document_command
+        annotations:
+          summary: "High latency on merchant document command"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_MerchantDocumentCommand
+        expr: rate(golang_app_requests_total{service_name="merchant-service", method=~"CreateMerchantDocument|UpdateMerchantDocument|UpdateMerchantDocumentStatus|TrashedMerchantDocument|RestoreMerchantDocument|DeleteMerchantDocumentPermanent|RestoreAllMerchantDocument|DeleteAllMerchantDocumentPermanent"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_document_command
+        annotations:
+          summary: "No traffic on merchant document command"
+          description: "No requests received in the last 5 minutes."
+
+      - alert: HighFailureRate_MerchantQueryService
+        expr: increase(golang_app_requests_total{service_name="merchant-service", method=~"Find.*|FindAllTransactions|FindAllTransactionsByMerchant|FindAllTransactionsByApikey", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_query_service
+        annotations:
+          summary: "High failure rate on merchant query service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_MerchantQueryService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="merchant-service", method=~"Find.*|FindAllTransactions|FindAllTransactionsByMerchant|FindAllTransactionsByApikey"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_query_service
+        annotations:
+          summary: "High latency on merchant query service"
+          description: "P95 latency is greater than 1 second."
+
+      - alert: NoTraffic_MerchantQueryService
+        expr: rate(golang_app_requests_total{service_name="merchant-service", method=~"Find.*|FindAllTransactions|FindAllTransactionsByMerchant|FindAllTransactionsByApikey"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: merchant_query_service
+        annotations:
+          summary: "No traffic on merchant query service"
+          description: "No requests received in the last 5 minutes."

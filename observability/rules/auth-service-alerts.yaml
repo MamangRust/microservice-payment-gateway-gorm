@@ -1,0 +1,35 @@
+# Auth service alerts.
+# Metrics recorded by shared/observability/tracing_metrics.go, exported by the
+# OTel collector under the golang_app namespace with the service_name label.
+groups:
+  - name: auth-service-alerts
+    rules:
+      - alert: HighFailureRate_LoginService
+        expr: increase(golang_app_requests_total{service_name="auth-service", method=~"Login|Register|RefreshToken|GetMe|ForgotPassword|ResetPassword|VerifyCode", status="error"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: auth
+        annotations:
+          summary: "High failure rate on auth service"
+          description: "More than 5 error requests in the last 5 minutes."
+
+      - alert: HighLatency_LoginService
+        expr: histogram_quantile(0.95, rate(golang_app_request_duration_seconds_bucket{service_name="auth-service", method=~"Login|Register|RefreshToken|GetMe|ForgotPassword|ResetPassword|VerifyCode"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: auth
+        annotations:
+          summary: "Auth service latency is high"
+          description: "95th percentile latency > 1s for auth service."
+
+      - alert: NoTraffic_LoginService
+        expr: rate(golang_app_requests_total{service_name="auth-service", method=~"Login|Register|RefreshToken|GetMe|ForgotPassword|ResetPassword|VerifyCode"}[5m]) == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: auth
+        annotations:
+          summary: "No traffic on auth service"
+          description: "No incoming traffic for auth service for 5 minutes."

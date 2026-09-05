@@ -1,0 +1,541 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Microservice Payment Gateway",
+    "uid": "microservice-payment-gateway",
+    "schemaVersion": 40,
+    "tags": [
+      "golang",
+      "kafka",
+      "microservice",
+      "profiling"
+    ],
+    "timezone": "browser",
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 0,
+        "title": "Services Up",
+        "type": "stat",
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "targets": [
+          {
+            "expr": "up{job=\"golang-app-via-otel\"}",
+            "refId": "A",
+            "legendFormat": "Go Services"
+          },
+          {
+            "expr": "up{job=\"kafka-exporter\"}",
+            "refId": "B",
+            "legendFormat": "Kafka Exporter"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 0.5
+                }
+              ]
+            },
+            "mappings": [
+              {
+                "type": "value",
+                "value": 1,
+                "text": "UP"
+              },
+              {
+                "type": "value",
+                "value": 0,
+                "text": "DOWN"
+              }
+            ]
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "value_and_name",
+          "reduceOptions": {
+            "values": true,
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        }
+      },
+      {
+        "id": 1,
+        "title": "Kafka Broker Status",
+        "type": "stat",
+        "gridPos": {
+          "x": 4,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "targets": [
+          {
+            "expr": "kafka_brokers",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "value",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Kafka Under-Replicated Partitions",
+        "type": "stat",
+        "gridPos": {
+          "x": 8,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "targets": [
+          {
+            "expr": "sum(kafka_topic_partition_under_replicated_partition)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "value",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Kafka Consumer Group Lag (sum)",
+        "type": "stat",
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 4,
+          "h": 4
+        },
+        "targets": [
+          {
+            "expr": "sum(kafka_consumergroup_lag_sum)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "value",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Go Routines per Service",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 0,
+          "y": 4,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "golang_app_go_goroutine_count",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2,
+              "spanNulls": true
+            }
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Heap In-Use per Service",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 8,
+          "y": 4,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "golang_app_go_memory_used_bytes / 1024 / 1024",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2,
+              "spanNulls": true
+            },
+            "unit": "MiB"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Allocation Rate per Service",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 16,
+          "y": 4,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(golang_app_go_memory_allocated_bytes_total[1m]) / 1024",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 10,
+              "lineWidth": 2,
+              "spanNulls": true
+            },
+            "unit": "KiB/s"
+          }
+        }
+      },
+      {
+        "id": 20,
+        "title": "GC Heap Goal per Service",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 0,
+          "y": 12,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "golang_app_go_memory_gc_goal_bytes / 1024 / 1024",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 10,
+              "lineWidth": 2,
+              "spanNulls": true
+            },
+            "unit": "MiB"
+          }
+        }
+      },
+      {
+        "id": 30,
+        "title": "Cache Op Count (rate)",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 8,
+          "y": 12,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(golang_app_cache_operation_duration_seconds_count[1m])",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2,
+              "spanNulls": true
+            }
+          }
+        }
+      },
+      {
+        "id": 31,
+        "title": "Allocations Count per Service",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 16,
+          "y": 12,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(golang_app_go_memory_allocations_total[1m])",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2,
+              "spanNulls": true
+            }
+          }
+        }
+      },
+      {
+        "id": 32,
+        "title": "Cache Op Duration (p95)",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 0,
+          "y": 20,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(golang_app_cache_operation_duration_seconds_bucket[1m])) * 1000",
+            "legendFormat": "{{service_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2,
+              "spanNulls": true
+            },
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "id": 40,
+        "title": "Kafka Consumer Lag per Group",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 8,
+          "y": 20,
+          "w": 16,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "sum by (consumergroup) (kafka_consumergroup_lag_sum)",
+            "legendFormat": "{{consumergroup}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2,
+              "spanNulls": true
+            }
+          }
+        }
+      },
+      {
+        "id": 41,
+        "title": "Kafka Partitions per Topic",
+        "type": "bargauge",
+        "gridPos": {
+          "x": 0,
+          "y": 28,
+          "w": 24,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "kafka_topic_partitions",
+            "legendFormat": "{{topic}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 50,
+        "title": "CPU Profile Flamegraph",
+        "type": "flamegraph",
+        "gridPos": {
+          "x": 0,
+          "y": 36,
+          "w": 24,
+          "h": 12
+        },
+        "datasource": {
+          "type": "grafana-pyroscope-datasource",
+          "uid": "efttxrdc16r5sa"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "grafana-pyroscope-datasource",
+              "uid": "efttxrdc16r5sa"
+            },
+            "queryType": "profile",
+            "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+            "labelSelector": "{}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 51,
+        "title": "Memory Alloc Profile Flamegraph",
+        "type": "flamegraph",
+        "gridPos": {
+          "x": 0,
+          "y": 48,
+          "w": 24,
+          "h": 12
+        },
+        "datasource": {
+          "type": "grafana-pyroscope-datasource",
+          "uid": "efttxrdc16r5sa"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "grafana-pyroscope-datasource",
+              "uid": "efttxrdc16r5sa"
+            },
+            "queryType": "profile",
+            "profileTypeId": "memory:alloc_objects:count:space:bytes",
+            "labelSelector": "{}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 52,
+        "title": "Alloc Space Flamegraph",
+        "type": "flamegraph",
+        "gridPos": {
+          "x": 0,
+          "y": 60,
+          "w": 24,
+          "h": 12
+        },
+        "datasource": {
+          "type": "grafana-pyroscope-datasource",
+          "uid": "efttxrdc16r5sa"
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "grafana-pyroscope-datasource",
+              "uid": "efttxrdc16r5sa"
+            },
+            "queryType": "profile",
+            "profileTypeId": "memory:alloc_space:bytes:space:bytes",
+            "labelSelector": "{}",
+            "refId": "A"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    }
+  },
+  "overwrite": true
+}

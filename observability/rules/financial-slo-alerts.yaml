@@ -1,0 +1,103 @@
+# Financial SLO alerts for money-moving commands.
+#
+# Metric names here match the actual instrumentation:
+#   - shared/observability/tracing_metrics.go records requests_total /
+#     request_duration_seconds with labels method, status, protocol.
+#   - The OTel collector exports them under the "golang_app" namespace and
+#     converts resource attributes (service.name) to the service_name label.
+#   - shared/ledger records ledger_reconciliation_mismatch (counter).
+#   - shared/outbox records outbox_events_published / outbox_events_failed
+#     (counters) and outbox_events_pending (gauge).
+groups:
+  - name: financial-slo-alerts
+    rules:
+      # Error budget burn alerts for money-moving commands. SLO: 99.9%
+      # availability, 30-day budget. Fast burn (14.4x) fires after ~2h of
+      # budget consumption; slow burn (6x) after ~5h.
+      - alert: FinancialCommandErrorBudgetFastBurn
+        expr: |
+          (
+            sum(rate(golang_app_requests_total{service_name=~"transaction-service|transfer-service", status="error"}[5m]))
+            / sum(rate(golang_app_requests_total{service_name=~"transaction-service|transfer-service"}[5m]))
+          ) > 0.0014
+          or
+          (
+            sum(rate(golang_app_requests_total{service_name=~"topup-service|withdraw-service", status="error"}[5m]))
+            / sum(rate(golang_app_requests_total{service_name=~"topup-service|withdraw-service"}[5m]))
+          ) > 0.0014
+        for: 2h
+        labels:
+          severity: critical
+          service: financial_commands
+        annotations:
+          summary: "Financial command error budget burning fast"
+          description: "Error rate above 0.14% sustained for 2h. Investigate transaction/transfer/topup/withdraw command failures immediately."
+
+      - alert: FinancialCommandErrorBudgetSlowBurn
+        expr: |
+          (
+            sum(rate(golang_app_requests_total{service_name=~"transaction-service|transfer-service", status="error"}[30m]))
+            / sum(rate(golang_app_requests_total{service_name=~"transaction-service|transfer-service"}[30m]))
+          ) > 0.0006
+          or
+          (
+            sum(rate(golang_app_requests_total{service_name=~"topup-service|withdraw-service", status="error"}[30m]))
+            / sum(rate(golang_app_requests_total{service_name=~"topup-service|withdraw-service"}[30m]))
+          ) > 0.0006
+        for: 5h
+        labels:
+          severity: warning
+          service: financial_commands
+        annotations:
+          summary: "Financial command error budget burning slow"
+          description: "Error rate above 0.06% sustained for 5h. Schedule remediation before monthly budget is exhausted."
+
+      - alert: FinancialCommandP99Latency
+        expr: |
+          histogram_quantile(0.99, rate(golang_app_request_duration_seconds_bucket{service_name=~"transaction-service|transfer-service"}[5m])) > 1
+          or
+          histogram_quantile(0.99, rate(golang_app_request_duration_seconds_bucket{service_name=~"topup-service|withdraw-service"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: financial_commands
+        annotations:
+          summary: "Financial command p99 latency above 1s"
+          description: "p99 latency of money-moving commands exceeds 1s for 10 minutes."
+
+      - alert: ReconciliationQueueGrowing
+        expr: |
+          sum(increase(golang_app_ledger_reconciliation_mismatch_total[30m])) > 10
+        for: 30m
+        labels:
+          severity: warning
+          service: saldo
+        annotations:
+          summary: "Reconciliation keeps detecting balance mismatches"
+          description: "Reconciler reported more than 10 new balance mismatches in 30m. Review GET /api/saldo-query/reconciliation and resolve via adjustment + resolve endpoint."
+
+      # Outbox lag: pending events accumulate when the broker is down or the
+      # publisher is starved. Gauge is exported by shared/outbox Publisher.
+      - alert: OutboxLagGrowing
+        expr: |
+          sum(golang_app_outbox_events_pending) > 500
+        for: 15m
+        labels:
+          severity: warning
+          service: outbox
+        annotations:
+          summary: "Outbox backlog is growing"
+          description: "More than 500 outbox events waiting for delivery for 15 minutes. Check Kafka broker and publisher workers."
+
+      # Broker availability for the outbox publisher: stale events block
+      # email/stats delivery and hide producer failures.
+      - alert: OutboxStaleEvents
+        expr: |
+          sum(increase(golang_app_outbox_events_failed_total[15m])) > 100
+        for: 15m
+        labels:
+          severity: warning
+          service: outbox
+        annotations:
+          summary: "Outbox publisher failing to deliver events"
+          description: "More than 100 outbox events failed to publish in 15 minutes. Check Kafka broker and publisher workers."

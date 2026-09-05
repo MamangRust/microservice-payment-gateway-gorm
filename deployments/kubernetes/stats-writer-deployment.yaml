@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stats-writer
+  namespace: payment-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stats-writer
+  template:
+    metadata:
+      labels:
+        app: stats-writer
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: init-log-permission
+          image: busybox:1.35
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "[INIT] Setting ownership for /var/log/app"
+              chown -R 1000:1000 /var/log/app
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/log/app
+          securityContext:
+            runAsUser: 0
+        - name: wait-for-kafka
+          image: busybox:1.35
+          command: ["sh", "-c"]
+          args:
+             - |
+               echo "[INIT] Waiting for Kafka to be ready (TCP)..."
+               until nc -z kafka-service.payment-gateway.svc.cluster.local 9092; do
+                 echo "Kafka is not ready yet. Retrying in 5 seconds..."
+                 sleep 5
+               done
+               echo "[INIT] Kafka is ready!"
+        - name: wait-for-redis-cluster
+          image: busybox:1.35
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "[INIT] Waiting for Redis Cluster nodes to be ready..."
+              until nc -z redis-0.redis-service.payment-gateway.svc.cluster.local 6379; do
+                echo "Redis Cluster node 0 is not ready yet. Retrying in 5 seconds..."
+                sleep 5
+              done
+              echo "[INIT] Redis Cluster is accessible!"
+      containers:
+        - name: stats-writer
+          image: microservice-payment-gateway-grpc/stats-writer:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: CLICKHOUSE_HOST
+              value: "clickhouse.payment-gateway.svc.cluster.local"
+            - name: CLICKHOUSE_PORT
+              value: "9000"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/log/app
+      volumes:
+        - name: app-logs
+          persistentVolumeClaim:
+            claimName: app-logs-pvc

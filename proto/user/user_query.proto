@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option go_package = 'github.com/MamangRust/microservice-payment-gateway-grpc/pb/user';
+
+package pb.user;
+
+import "user/user.proto";
+import "common/api.proto";
+
+message ApiResponsePaginationUserDeleteAt {
+  string status = 1;
+  string message = 2;
+  repeated UserResponseDeleteAt data = 3;
+  pb.common.PaginationMeta paginationMeta = 4;
+}
+
+message ApiResponsePaginationUser {
+  string status = 1;
+  string message = 2;
+  repeated UserResponse data = 3;
+  pb.common.PaginationMeta paginationMeta = 4;
+}
+
+message FindByEmailUserRequest {
+  string email = 1;
+}
+
+message FindByVerificationCodeUserRequest {
+  string verification_code = 1;
+}
+
+service UserQueryService {
+  rpc FindAll(FindAllUserRequest) returns (ApiResponsePaginationUser);
+  rpc FindById(FindByIdUserRequest) returns (ApiResponseUser);
+  rpc FindByEmail(FindByEmailUserRequest) returns (ApiResponseUser);
+  rpc FindByVerificationCode(FindByVerificationCodeUserRequest) returns (ApiResponseUser);
+
+  rpc FindByActive(FindAllUserRequest)
+      returns (ApiResponsePaginationUserDeleteAt) {}
+  rpc FindByTrashed(FindAllUserRequest)
+      returns (ApiResponsePaginationUserDeleteAt) {}
+}
