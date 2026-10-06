@@ -8,11 +8,13 @@ import (
 type Handler struct {
 	RoleQuery   RoleQueryHandlerGrpc
 	RoleCommand RoleCommandHandlerGrpc
+	UserRole    UserRoleHandleGrpc
 }
 
 func NewHandler(service *service.Service) *Handler {
 	return &Handler{
 		RoleQuery:   NewRoleQueryHandleGrpc(service.RoleQuery),
 		RoleCommand: NewRoleCommandHandleGrpc(service.RoleCommand),
+		UserRole:    NewUserRoleHandleGrpc(service.RoleQuery, service.RoleCommand),
 	}
 }

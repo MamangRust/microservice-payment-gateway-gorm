@@ -16,8 +16,17 @@ fail()  { echo -e "${RED}[FAIL]${NC} $*"; }
 cat > /tmp/e2e-common.env <<'ENVEOF'
 APP_ENV=test
 DB_DRIVER=postgres
-DB_USERNAME=DRAGON
-DB_PASSWORD=DRAGON
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_IDENTITY_HOST=localhost
+DB_IDENTITY_PORT=6432
+DB_IDENTITY_NAME=pg_identity
+DB_PAYMENT_HOST=localhost
+DB_PAYMENT_PORT=6433
+DB_PAYMENT_NAME=pg_payment
+DB_FINANCIAL_HOST=localhost
+DB_FINANCIAL_PORT=6434
+DB_FINANCIAL_NAME=pg_financial
 SECRET_KEY=yantopedia
 KAFKA_BROKERS=localhost:9092
 REDIS_ADDRS=localhost:6379
@@ -38,7 +47,7 @@ ENVEOF
 
 # ─── Seed roles ────────────────────────────────────────────────────────
 info "Seeding roles ..."
-docker compose -f "$COMPOSE_FILE" exec -T role-db psql -U DRAGON -d role_db -c "
+docker compose -f "$COMPOSE_FILE" exec -T postgres_identity psql -U postgres -d pg_identity -c "
 INSERT INTO roles (role_name, created_at, updated_at) VALUES
   ('ROLE_ADMIN',now(),now()),('ROLE_USER',now(),now()),('ROLE_MERCHANT',now(),now()),
   ('ROLE_CUSTOMER',now(),now()),('ROLE_MODERATOR',now(),now()),('ROLE_SUPERVISOR',now(),now()),
@@ -62,16 +71,16 @@ launch() {
   info "  launched $svc"
 }
 
-launch auth     DB_HOST=localhost DB_PORT=5433 DB_NAME=auth_db
-launch user     DB_HOST=localhost DB_PORT=5434 DB_NAME=user_db
-launch role     DB_HOST=localhost DB_PORT=5435 DB_NAME=role_db
-launch card     DB_HOST=localhost DB_PORT=5436 DB_NAME=card_db BILLING_CYCLE_DAY=1
-launch merchant DB_HOST=localhost DB_PORT=5437 DB_NAME=merchant_db
-launch saldo    DB_HOST=localhost DB_PORT=5438 DB_NAME=saldo_db
-launch topup    DB_HOST=localhost DB_PORT=5439 DB_NAME=topup_db
-launch transaction DB_HOST=localhost DB_PORT=5440 DB_NAME=transaction_db
-launch transfer DB_HOST=localhost DB_PORT=5441 DB_NAME=transfer_db
-launch withdraw DB_HOST=localhost DB_PORT=5442 DB_NAME=withdraw_db WITHDRAW_DAILY_LIMIT=10000000
+launch auth
+launch user
+launch role
+launch card     BILLING_CYCLE_DAY=1
+launch merchant
+launch saldo
+launch topup
+launch transaction
+launch transfer
+launch withdraw WITHDRAW_DAILY_LIMIT=10000000
 
 # stats-reader
 setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/stats-reader' && exec env CLICKHOUSE_ADDR=localhost:9000 CLICKHOUSE_DATABASE=default CLICKHOUSE_USERNAME=dragon CLICKHOUSE_PASSWORD=dragon_knight '$BIN_DIR/stats-reader' > '$LOG_DIR/stats-reader.log' 2>&1" &
@@ -135,16 +144,16 @@ for round in 1 2 3; do
       svc=$(svc_for_port "$port")
       info "  restarting $svc (port $port missing)"
       case "$svc" in
-        auth)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/auth' && exec env DB_HOST=localhost DB_PORT=5433 DB_NAME=auth_db '$BIN_DIR/auth' > '$LOG_DIR/auth.log' 2>&1" &;;
-        role)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/role' && exec env DB_HOST=localhost DB_PORT=5435 DB_NAME=role_db '$BIN_DIR/role' > '$LOG_DIR/role.log' 2>&1" &;;
-        card)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/card' && exec env DB_HOST=localhost DB_PORT=5436 DB_NAME=card_db BILLING_CYCLE_DAY=1 '$BIN_DIR/card' > '$LOG_DIR/card.log' 2>&1" &;;
-        merchant) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/merchant' && exec env DB_HOST=localhost DB_PORT=5437 DB_NAME=merchant_db '$BIN_DIR/merchant' > '$LOG_DIR/merchant.log' 2>&1" &;;
-        user)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/user' && exec env DB_HOST=localhost DB_PORT=5434 DB_NAME=user_db '$BIN_DIR/user' > '$LOG_DIR/user.log' 2>&1" &;;
-        saldo)    setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/saldo' && exec env DB_HOST=localhost DB_PORT=5438 DB_NAME=saldo_db '$BIN_DIR/saldo' > '$LOG_DIR/saldo.log' 2>&1" &;;
-        topup)    setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/topup' && exec env DB_HOST=localhost DB_PORT=5439 DB_NAME=topup_db '$BIN_DIR/topup' > '$LOG_DIR/topup.log' 2>&1" &;;
-        transaction) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/transaction' && exec env DB_HOST=localhost DB_PORT=5440 DB_NAME=transaction_db '$BIN_DIR/transaction' > '$LOG_DIR/transaction.log' 2>&1" &;;
-        transfer) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/transfer' && exec env DB_HOST=localhost DB_PORT=5441 DB_NAME=transfer_db '$BIN_DIR/transfer' > '$LOG_DIR/transfer.log' 2>&1" &;;
-        withdraw) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/withdraw' && exec env DB_HOST=localhost DB_PORT=5442 DB_NAME=withdraw_db WITHDRAW_DAILY_LIMIT=10000000 '$BIN_DIR/withdraw' > '$LOG_DIR/withdraw.log' 2>&1" &;;
+        auth)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/auth' && exec env '$BIN_DIR/auth' > '$LOG_DIR/auth.log' 2>&1" &;;
+        role)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/role' && exec env '$BIN_DIR/role' > '$LOG_DIR/role.log' 2>&1" &;;
+        card)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/card' && exec env BILLING_CYCLE_DAY=1 '$BIN_DIR/card' > '$LOG_DIR/card.log' 2>&1" &;;
+        merchant) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/merchant' && exec env '$BIN_DIR/merchant' > '$LOG_DIR/merchant.log' 2>&1" &;;
+        user)     setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/user' && exec env '$BIN_DIR/user' > '$LOG_DIR/user.log' 2>&1" &;;
+        saldo)    setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/saldo' && exec env '$BIN_DIR/saldo' > '$LOG_DIR/saldo.log' 2>&1" &;;
+        topup)    setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/topup' && exec env '$BIN_DIR/topup' > '$LOG_DIR/topup.log' 2>&1" &;;
+        transaction) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/transaction' && exec env '$BIN_DIR/transaction' > '$LOG_DIR/transaction.log' 2>&1" &;;
+        transfer) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/transfer' && exec env '$BIN_DIR/transfer' > '$LOG_DIR/transfer.log' 2>&1" &;;
+        withdraw) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/withdraw' && exec env WITHDRAW_DAILY_LIMIT=10000000 '$BIN_DIR/withdraw' > '$LOG_DIR/withdraw.log' 2>&1" &;;
         stats-reader) setsid bash -c "set -a; source /tmp/e2e-common.env; set +a; cd '$ROOT/service/stats-reader' && exec env CLICKHOUSE_ADDR=localhost:9000 CLICKHOUSE_DATABASE=default CLICKHOUSE_USERNAME=dragon CLICKHOUSE_PASSWORD=dragon_knight '$BIN_DIR/stats-reader' > '$LOG_DIR/stats-reader.log' 2>&1" &;;
       esac
       sleep 2
@@ -154,7 +163,7 @@ done
 
 # Re-seed roles + flush redis
 info "Re-seeding roles + flushing Redis ..."
-docker compose -f "$COMPOSE_FILE" exec -T role-db psql -U DRAGON -d role_db -c "
+docker compose -f "$COMPOSE_FILE" exec -T postgres_identity psql -U postgres -d pg_identity -c "
 INSERT INTO roles (role_name, created_at, updated_at) VALUES
   ('ROLE_ADMIN',now(),now()),('ROLE_USER',now(),now()),('ROLE_MERCHANT',now(),now()),
   ('ROLE_CUSTOMER',now(),now()),('ROLE_MODERATOR',now(),now()),('ROLE_SUPERVISOR',now(),now()),

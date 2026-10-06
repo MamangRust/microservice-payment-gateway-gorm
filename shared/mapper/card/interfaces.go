@@ -2,7 +2,7 @@ package cardapimapper
 
 import (
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
-	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card/stats"
+	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/card"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/response"
 )
 

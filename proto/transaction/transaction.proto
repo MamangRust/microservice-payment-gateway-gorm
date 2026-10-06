@@ -43,6 +43,7 @@ message TransactionResponse {
   string transaction_time = 7;
   string created_at = 8;
   string updated_at = 9;
+  string deleted_at = 10;
 }
 
 message TransactionResponseDeleteAt {

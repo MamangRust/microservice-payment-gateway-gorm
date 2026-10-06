@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/topup"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/topup"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/topup/stats"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	saldo_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/repository"
@@ -79,15 +79,12 @@ func (s *TopupGapiTestSuite) SetupSuite() {
 			created_at DateTime DEFAULT now()
 		) ENGINE = MergeTree() ORDER BY (card_number, created_at)`)
 
-	userRepos := user_repo.NewRepositories(gormDB)
+	userRepos := user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient})
 	cardRepos := card_repo.NewRepositories(gormDB, nil)
-	saldoRepos := saldo_repo.NewRepositories(gormDB, nil)
+	saldoRepos := saldo_repo.NewRepositories(gormDB, nil, nil)
 
-	cardAdapter := &topupCardRepoAdapter{
-		CardQueryRepository: cardRepos.CardQuery, CardCommandRepository: cardRepos.CardCommand,
-	}
-	s.topupRepo = topup_repo.NewRepositories(gormDB, cardAdapter, saldoRepos)
-	s.userRepo = userRepos.UserCommand()
+	s.topupRepo = topup_repo.NewRepositories(gormDB, nil, nil, nil, nil)
+	s.userRepo = userRepos.UserCommand
 	s.cardRepo = cardRepos.CardCommand
 	s.saldoRepo = saldoRepos
 
@@ -143,10 +140,16 @@ func (s *TopupGapiTestSuite) SetupSuite() {
 }
 
 func (s *TopupGapiTestSuite) TearDownSuite() {
-	if s.conn != nil { s.conn.Close() }
-	if s.grpcServer != nil { s.grpcServer.Stop() }
+	if s.conn != nil {
+		s.conn.Close()
+	}
+	if s.grpcServer != nil {
+		s.grpcServer.Stop()
+	}
 	s.redisClient.Close()
-	if s.chConn != nil { s.chConn.Close() }
+	if s.chConn != nil {
+		s.chConn.Close()
+	}
 	s.ts.Teardown()
 }
 
@@ -206,6 +209,8 @@ func (s *TopupGapiTestSuite) Test11_BulkOperations() {
 }
 
 func TestTopupGapiSuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TopupGapiTestSuite))
 }

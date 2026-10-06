@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/email"
@@ -43,7 +42,7 @@ type withdrawCommandServiceDeps struct {
 
 	Logger               logger.LoggerInterface
 	Observability        observability.TraceLoggerObservability
-	AISecurityClient     ai_security.AISecurityServiceClient
+	AISecurityAdapter    adapter.AISecurityAdapter
 	DailyWithdrawalLimit int64
 }
 
@@ -61,7 +60,7 @@ type withdrawCommandService struct {
 
 	logger               logger.LoggerInterface
 	observability        observability.TraceLoggerObservability
-	aiSecurityClient     ai_security.AISecurityServiceClient
+	aiSecurityAdapter    adapter.AISecurityAdapter
 	dailyWithdrawalLimit int64
 }
 
@@ -79,7 +78,7 @@ func NewWithdrawCommandService(
 		outboxStore:               deps.OutboxStore,
 		logger:                    deps.Logger,
 		observability:             deps.Observability,
-		aiSecurityClient:          deps.AISecurityClient,
+		aiSecurityAdapter:         deps.AISecurityAdapter,
 		dailyWithdrawalLimit:      deps.DailyWithdrawalLimit,
 	}
 }
@@ -169,13 +168,13 @@ func (s *withdrawCommandService) Create(ctx context.Context, request *requests.C
 	}
 
 	// AI Security Check
-	if s.aiSecurityClient != nil {
-		secRes, err := s.aiSecurityClient.VerifySecurity(ctx, &ai_security.SecurityRequest{
-			Domain:   ai_security.SecurityDomain_WITHDRAW,
-			EntityId: request.CardNumber,
+	if s.aiSecurityAdapter != nil {
+		secRes, err := s.aiSecurityAdapter.VerifySecurity(ctx, &adapter.SecurityCheckRequest{
+			Domain:   adapter.SecurityDomainWithdraw,
+			EntityID: request.CardNumber,
 			Amount:   float64(request.WithdrawAmount),
 		})
-		if err == nil && !secRes.IsSafe {
+		if err == nil && secRes != nil && !secRes.IsSafe {
 			status = "error"
 			s.logger.Warn("Withdrawal blocked by AI Security", zap.String("reason", secRes.Reason))
 			return nil, errors.New("security block: " + secRes.Reason)

@@ -12,7 +12,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/merchant"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/merchant/stats"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/merchant"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	api "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/handler/merchant"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/merchant/handler"

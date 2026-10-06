@@ -6,7 +6,7 @@ import (
 
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
 	pbCardBase "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
-	pbCardStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card/stats"
+	pbCardStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/card"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/stats-reader/repository"
 	"google.golang.org/protobuf/types/known/emptypb"

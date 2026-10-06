@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/saldo"
-	pbSaldoStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/saldo/stats"
+	pbSaldoStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/saldo"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	stats_cache "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/redis/api/stats"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors"

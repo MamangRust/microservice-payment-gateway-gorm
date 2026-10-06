@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/role"
+	pbuserrole "github.com/MamangRust/microservice-payment-gateway-grpc/pb/user_role"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/middlewares"
 	role_cache "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/redis/api/role"
@@ -17,6 +18,8 @@ import (
 type roleQueryHandlerApi struct {
 	role pb.RoleQueryServiceClient
 
+	userRole pbuserrole.UserRoleServiceClient
+
 	logger logger.LoggerInterface
 
 	mapper apimapper.RoleQueryResponseMapper
@@ -28,6 +31,7 @@ type roleQueryHandlerApi struct {
 
 type roleQueryHandleDeps struct {
 	client        pb.RoleQueryServiceClient
+	userRoleClient pbuserrole.UserRoleServiceClient
 	router        *echo.Echo
 	logger        logger.LoggerInterface
 	mapper        apimapper.RoleQueryResponseMapper
@@ -42,6 +46,7 @@ func NewRoleQueryHandleApi(params *roleQueryHandleDeps) *roleQueryHandlerApi {
 
 	roleQueryHandler := &roleQueryHandlerApi{
 		role:       params.client,
+		userRole:   params.userRoleClient,
 		logger:     params.logger,
 		mapper:     params.mapper,
 		cache:      params.cache,
@@ -308,11 +313,11 @@ func (h *roleQueryHandlerApi) FindByUserId(c echo.Context) error {
 		return c.JSON(http.StatusOK, cachedData)
 	}
 
-	req := &pb.FindByIdUserRoleRequest{
+	req := &pbuserrole.FindByIdUserRoleRequest{
 		UserId: int32(userID),
 	}
 
-	res, err := h.role.FindByUserId(ctx, req)
+	res, err := h.userRole.FindByUserId(ctx, req)
 	if err != nil {
 		return errors.ParseGrpcError(err)
 	}

@@ -24,21 +24,9 @@ message ApiResponseRoleDelete {
   string message = 2;
 }
 
-message CreateUserRoleRequest {
-  int32 user_id = 1;
-  int32 role_id = 2;
-}
-
-message DeleteUserRoleRequest {
-  int32 user_id = 1;
-  int32 role_id = 2;
-}
-
 service RoleCommandService {
   rpc CreateRole(CreateRoleRequest) returns (ApiResponseRole) {}
   rpc UpdateRole(UpdateRoleRequest) returns (ApiResponseRole) {}
-  rpc CreateUserRole(CreateUserRoleRequest) returns (ApiResponseRole) {}
-  rpc DeleteUserRole(DeleteUserRoleRequest) returns (ApiResponseRole) {}
   rpc TrashedRole(FindByIdRoleRequest) returns (ApiResponseRoleDeleteAt) {}
   rpc RestoreRole(FindByIdRoleRequest) returns (ApiResponseRoleDeleteAt) {}
   rpc DeleteRolePermanent(FindByIdRoleRequest) returns (ApiResponseRoleDelete) {

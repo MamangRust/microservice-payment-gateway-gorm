@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer"
-	pbTransferStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer/stats"
+	pbTransferStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transfer"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/stats-reader/repository"
 )

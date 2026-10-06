@@ -72,6 +72,7 @@ func (s *transactionQueryService) FindAll(ctx context.Context, req *requests.Fin
 			method,
 			span,
 
+			zap.NamedError("cause", err),
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search),
@@ -124,6 +125,7 @@ func (s *transactionQueryService) FindAllByCardNumber(ctx context.Context, req *
 			method,
 			span,
 
+			zap.NamedError("cause", err),
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search),
@@ -212,6 +214,7 @@ func (s *transactionQueryService) FindByActive(ctx context.Context, req *request
 			method,
 			span,
 
+			zap.NamedError("cause", err),
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search),
@@ -263,6 +266,7 @@ func (s *transactionQueryService) FindByTrashed(ctx context.Context, req *reques
 			method,
 			span,
 
+			zap.NamedError("cause", err),
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search),
@@ -310,6 +314,7 @@ func (s *transactionQueryService) FindTransactionByMerchantId(ctx context.Contex
 			method,
 			span,
 
+			zap.NamedError("cause", err),
 			zap.Int("merchant_id", merchant_id),
 		)
 	}

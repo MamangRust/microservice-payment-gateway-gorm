@@ -51,7 +51,7 @@ func (s *TransactionServiceTestSuite) SetupSuite() {
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
 	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil, nil)
 	s.merchantRepo = merchant_repo.NewRepositories(gormDB, nil)
 
 	opts, err := redis.ParseURL(s.ts.RedisURL)
@@ -64,10 +64,7 @@ func (s *TransactionServiceTestSuite) SetupSuite() {
 	cacheMetrics, _ := observability.NewCacheMetrics("test")
 	cacheStore := cache.NewCacheStore(s.redisClient, log, cacheMetrics)
 
-	cardRepoWrapper := &transactionCardRepo{
-		query: s.cardRepo.CardQuery, command: s.cardRepo.CardCommand,
-	}
-	transactionRepos := repository.NewRepositories(gormDB, s.saldoRepo, cardRepoWrapper, s.merchantRepo)
+	transactionRepos := repository.NewRepositories(gormDB, nil, nil, nil, nil, nil)
 	s.transactionService = service.NewService(&service.Deps{
 		Kafka: nil, Repositories: transactionRepos, MerchantAdapter: s.ts.MerchantAdapter,
 		CardAdapter: s.ts.CardAdapter, SaldoAdapter: s.ts.SaldoAdapter, Logger: log, Cache: cacheStore,
@@ -121,6 +118,8 @@ func (s *TransactionServiceTestSuite) Test1_CreateTransaction() {
 }
 
 func TestTransactionServiceSuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TransactionServiceTestSuite))
 }

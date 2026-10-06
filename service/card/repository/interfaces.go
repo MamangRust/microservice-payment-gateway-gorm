@@ -34,10 +34,6 @@ type CardQueryRepository interface {
 	CountTrashedCards(ctx context.Context, search string) (int64, error)
 }
 
-type UserRepository interface {
-	FindById(ctx context.Context, userID int) (*models.User, error)
-}
-
 type CardAuthTransactionRepository interface {
 	InsertPending(ctx context.Context, req *requests.AuthorizeCardRequest) (*models.CardAuthTransaction, error)
 	Approve(ctx context.Context, txnID string) (*models.CardAuthTransaction, error)

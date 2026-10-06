@@ -1,32 +1,50 @@
 # Analytics Engine and Real-Time Reporting
 
-This document describes the analytical infrastructure used for sub-second reporting and historical data aggregation across the platform.
+This document describes the analytical infrastructure used for reporting and
+historical data aggregation across the platform.
 
-## ClickHouse OLAP Cluster
+## ClickHouse OLAP Store
 
-The system utilizes ClickHouse as its primary analytical (OLAP) engine. It is configured for high-throughput ingestion and sub-second query performance.
+ClickHouse is the analytical (OLAP) engine. A single ClickHouse instance holds
+all event tables; there are no distributed tables and no materialized views.
+Aggregations are computed at query time.
 
 ### Data Ingestion Pipeline
 
-All financial events from the Distributed Event Bus are consumed by the `stats-writer` service and asynchronously ingested into ClickHouse. This ensures that analytical processing has zero performance impact on the primary transactional (OLTP) database.
+Domain events are published to Kafka (`stats-topic-*`) by the transactional
+services and consumed by `stats-writer`, which batch-inserts them into
+ClickHouse. This keeps analytical processing off the primary transactional
+(OLTP) database.
+
+- Batch size: 1000 rows, flushed at most every 5 seconds.
+- Consumer group: `stats-writer-group`.
+- Deduplication is in-memory only (48-hour window), so aggregates depend on the
+  consumer process staying alive across redeliveries.
 
 ### Analytical RPC Interface
 
-The `stats-reader` service provides over 125 specialized gRPC procedures for querying platform-wide metrics, including:
+`stats-reader` exposes **109 gRPC procedures across 22 services** for querying
+platform-wide metrics, including:
+
 - Transaction throughput and success rates.
 - Merchant-specific performance data.
-- System-wide reconciliation reports.
-- User behavioral statistics for the AI Security engine.
+- Card, topup, transfer, withdraw and saldo statistics.
 
-## Query Performance and Sharding
+The reader listens on `:50062` by default (override with
+`STATS_READER_LISTEN_ADDR`) and queries ClickHouse directly on every request —
+there is no cache in the reader; caching lives in `apigateway` (5-minute TTL).
 
-ClickHouse utilize a MergeTree engine family for efficient data storage and indexing.
-- Distributed Tables: In production, tables are distributed across multiple nodes to facilitate parallel query execution.
-- Materialized Views: Critical aggregations are pre-computed using materialized views to ensure sub-millisecond response times for common dashboard metrics.
+## Query Performance
+
+All seven tables use the `MergeTree` engine with
+`PARTITION BY toYYYYMM(created_at)`, which keeps period-bounded queries cheap.
+There is no `FINAL` and no `ReplacingMergeTree`, so queries read rows as
+inserted.
 
 ## Observability of Analytics
 
-The health and performance of the analytics engine are monitored via the Unified OTLP pipeline. Key metrics tracked include:
+The health and performance of the analytics engine are monitored via the
+Unified OTLP pipeline. Key metrics tracked include:
+
 - Ingestion lag (Kafka offset to ClickHouse commit).
 - Query execution latency percentiles (p50, p90, p99).
-- Shard synchronization status.

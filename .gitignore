@@ -8,3 +8,6 @@ vendor/
 tmp/
 .idea/
 .vscode/
+
+# Compiled service binaries (go build ./cmd in a service directory)
+service/*/main

@@ -222,110 +222,6 @@ func (x *ApiResponseRoleDelete) GetMessage() string {
 	return ""
 }
 
-type CreateUserRoleRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RoleId        int32                  `protobuf:"varint,2,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateUserRoleRequest) Reset() {
-	*x = CreateUserRoleRequest{}
-	mi := &file_role_role_command_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateUserRoleRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateUserRoleRequest) ProtoMessage() {}
-
-func (x *CreateUserRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_role_role_command_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateUserRoleRequest.ProtoReflect.Descriptor instead.
-func (*CreateUserRoleRequest) Descriptor() ([]byte, []int) {
-	return file_role_role_command_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *CreateUserRoleRequest) GetUserId() int32 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
-func (x *CreateUserRoleRequest) GetRoleId() int32 {
-	if x != nil {
-		return x.RoleId
-	}
-	return 0
-}
-
-type DeleteUserRoleRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RoleId        int32                  `protobuf:"varint,2,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteUserRoleRequest) Reset() {
-	*x = DeleteUserRoleRequest{}
-	mi := &file_role_role_command_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteUserRoleRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteUserRoleRequest) ProtoMessage() {}
-
-func (x *DeleteUserRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_role_role_command_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteUserRoleRequest.ProtoReflect.Descriptor instead.
-func (*DeleteUserRoleRequest) Descriptor() ([]byte, []int) {
-	return file_role_role_command_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *DeleteUserRoleRequest) GetUserId() int32 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
-func (x *DeleteUserRoleRequest) GetRoleId() int32 {
-	if x != nil {
-		return x.RoleId
-	}
-	return 0
-}
-
 var File_role_role_command_proto protoreflect.FileDescriptor
 
 const file_role_role_command_proto_rawDesc = "" +
@@ -341,20 +237,12 @@ const file_role_role_command_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"I\n" +
 	"\x15ApiResponseRoleDelete\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"I\n" +
-	"\x15CreateUserRoleRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12\x17\n" +
-	"\arole_id\x18\x02 \x01(\x05R\x06roleId\"I\n" +
-	"\x15DeleteUserRoleRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12\x17\n" +
-	"\arole_id\x18\x02 \x01(\x05R\x06roleId2\xcf\x05\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xb3\x04\n" +
 	"\x12RoleCommandService\x12D\n" +
 	"\n" +
 	"CreateRole\x12\x1a.pb.role.CreateRoleRequest\x1a\x18.pb.role.ApiResponseRole\"\x00\x12D\n" +
 	"\n" +
-	"UpdateRole\x12\x1a.pb.role.UpdateRoleRequest\x1a\x18.pb.role.ApiResponseRole\"\x00\x12L\n" +
-	"\x0eCreateUserRole\x12\x1e.pb.role.CreateUserRoleRequest\x1a\x18.pb.role.ApiResponseRole\"\x00\x12L\n" +
-	"\x0eDeleteUserRole\x12\x1e.pb.role.DeleteUserRoleRequest\x1a\x18.pb.role.ApiResponseRole\"\x00\x12O\n" +
+	"UpdateRole\x12\x1a.pb.role.UpdateRoleRequest\x1a\x18.pb.role.ApiResponseRole\"\x00\x12O\n" +
 	"\vTrashedRole\x12\x1c.pb.role.FindByIdRoleRequest\x1a .pb.role.ApiResponseRoleDeleteAt\"\x00\x12O\n" +
 	"\vRestoreRole\x12\x1c.pb.role.FindByIdRoleRequest\x1a .pb.role.ApiResponseRoleDeleteAt\"\x00\x12U\n" +
 	"\x13DeleteRolePermanent\x12\x1c.pb.role.FindByIdRoleRequest\x1a\x1e.pb.role.ApiResponseRoleDelete\"\x00\x12G\n" +
@@ -373,40 +261,34 @@ func file_role_role_command_proto_rawDescGZIP() []byte {
 	return file_role_role_command_proto_rawDescData
 }
 
-var file_role_role_command_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_role_role_command_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_role_role_command_proto_goTypes = []any{
 	(*CreateRoleRequest)(nil),       // 0: pb.role.CreateRoleRequest
 	(*UpdateRoleRequest)(nil),       // 1: pb.role.UpdateRoleRequest
 	(*ApiResponseRoleAll)(nil),      // 2: pb.role.ApiResponseRoleAll
 	(*ApiResponseRoleDelete)(nil),   // 3: pb.role.ApiResponseRoleDelete
-	(*CreateUserRoleRequest)(nil),   // 4: pb.role.CreateUserRoleRequest
-	(*DeleteUserRoleRequest)(nil),   // 5: pb.role.DeleteUserRoleRequest
-	(*FindByIdRoleRequest)(nil),     // 6: pb.role.FindByIdRoleRequest
-	(*emptypb.Empty)(nil),           // 7: google.protobuf.Empty
-	(*ApiResponseRole)(nil),         // 8: pb.role.ApiResponseRole
-	(*ApiResponseRoleDeleteAt)(nil), // 9: pb.role.ApiResponseRoleDeleteAt
+	(*FindByIdRoleRequest)(nil),     // 4: pb.role.FindByIdRoleRequest
+	(*emptypb.Empty)(nil),           // 5: google.protobuf.Empty
+	(*ApiResponseRole)(nil),         // 6: pb.role.ApiResponseRole
+	(*ApiResponseRoleDeleteAt)(nil), // 7: pb.role.ApiResponseRoleDeleteAt
 }
 var file_role_role_command_proto_depIdxs = []int32{
 	0, // 0: pb.role.RoleCommandService.CreateRole:input_type -> pb.role.CreateRoleRequest
 	1, // 1: pb.role.RoleCommandService.UpdateRole:input_type -> pb.role.UpdateRoleRequest
-	4, // 2: pb.role.RoleCommandService.CreateUserRole:input_type -> pb.role.CreateUserRoleRequest
-	5, // 3: pb.role.RoleCommandService.DeleteUserRole:input_type -> pb.role.DeleteUserRoleRequest
-	6, // 4: pb.role.RoleCommandService.TrashedRole:input_type -> pb.role.FindByIdRoleRequest
-	6, // 5: pb.role.RoleCommandService.RestoreRole:input_type -> pb.role.FindByIdRoleRequest
-	6, // 6: pb.role.RoleCommandService.DeleteRolePermanent:input_type -> pb.role.FindByIdRoleRequest
-	7, // 7: pb.role.RoleCommandService.RestoreAllRole:input_type -> google.protobuf.Empty
-	7, // 8: pb.role.RoleCommandService.DeleteAllRolePermanent:input_type -> google.protobuf.Empty
-	8, // 9: pb.role.RoleCommandService.CreateRole:output_type -> pb.role.ApiResponseRole
-	8, // 10: pb.role.RoleCommandService.UpdateRole:output_type -> pb.role.ApiResponseRole
-	8, // 11: pb.role.RoleCommandService.CreateUserRole:output_type -> pb.role.ApiResponseRole
-	8, // 12: pb.role.RoleCommandService.DeleteUserRole:output_type -> pb.role.ApiResponseRole
-	9, // 13: pb.role.RoleCommandService.TrashedRole:output_type -> pb.role.ApiResponseRoleDeleteAt
-	9, // 14: pb.role.RoleCommandService.RestoreRole:output_type -> pb.role.ApiResponseRoleDeleteAt
-	3, // 15: pb.role.RoleCommandService.DeleteRolePermanent:output_type -> pb.role.ApiResponseRoleDelete
-	2, // 16: pb.role.RoleCommandService.RestoreAllRole:output_type -> pb.role.ApiResponseRoleAll
-	2, // 17: pb.role.RoleCommandService.DeleteAllRolePermanent:output_type -> pb.role.ApiResponseRoleAll
-	9, // [9:18] is the sub-list for method output_type
-	0, // [0:9] is the sub-list for method input_type
+	4, // 2: pb.role.RoleCommandService.TrashedRole:input_type -> pb.role.FindByIdRoleRequest
+	4, // 3: pb.role.RoleCommandService.RestoreRole:input_type -> pb.role.FindByIdRoleRequest
+	4, // 4: pb.role.RoleCommandService.DeleteRolePermanent:input_type -> pb.role.FindByIdRoleRequest
+	5, // 5: pb.role.RoleCommandService.RestoreAllRole:input_type -> google.protobuf.Empty
+	5, // 6: pb.role.RoleCommandService.DeleteAllRolePermanent:input_type -> google.protobuf.Empty
+	6, // 7: pb.role.RoleCommandService.CreateRole:output_type -> pb.role.ApiResponseRole
+	6, // 8: pb.role.RoleCommandService.UpdateRole:output_type -> pb.role.ApiResponseRole
+	7, // 9: pb.role.RoleCommandService.TrashedRole:output_type -> pb.role.ApiResponseRoleDeleteAt
+	7, // 10: pb.role.RoleCommandService.RestoreRole:output_type -> pb.role.ApiResponseRoleDeleteAt
+	3, // 11: pb.role.RoleCommandService.DeleteRolePermanent:output_type -> pb.role.ApiResponseRoleDelete
+	2, // 12: pb.role.RoleCommandService.RestoreAllRole:output_type -> pb.role.ApiResponseRoleAll
+	2, // 13: pb.role.RoleCommandService.DeleteAllRolePermanent:output_type -> pb.role.ApiResponseRoleAll
+	7, // [7:14] is the sub-list for method output_type
+	0, // [0:7] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -424,7 +306,7 @@ func file_role_role_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_role_role_command_proto_rawDesc), len(file_role_role_command_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

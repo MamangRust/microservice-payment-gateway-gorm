@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/email"
@@ -45,7 +44,7 @@ type transactionCommandServiceDeps struct {
 	OutboxStore                  repository.OutboxRepository
 	Logger                       logger.LoggerInterface
 	Observability                observability.TraceLoggerObservability
-	AISecurityClient             ai_security.AISecurityServiceClient
+	AISecurityAdapter            adapter.AISecurityAdapter
 }
 
 // transactionCommandService handles transaction write operations.
@@ -61,7 +60,7 @@ type transactionCommandService struct {
 	outboxStore                  repository.OutboxRepository
 	logger                       logger.LoggerInterface
 	observability                observability.TraceLoggerObservability
-	aiSecurityClient             ai_security.AISecurityServiceClient
+	aiSecurityAdapter            adapter.AISecurityAdapter
 }
 
 func NewTransactionCommandService(
@@ -79,7 +78,7 @@ func NewTransactionCommandService(
 		outboxStore:                  params.OutboxStore,
 		logger:                       params.Logger,
 		observability:                params.Observability,
-		aiSecurityClient:             params.AISecurityClient,
+		aiSecurityAdapter:            params.AISecurityAdapter,
 	}
 }
 
@@ -155,15 +154,15 @@ func (s *transactionCommandService) Create(ctx context.Context, apiKey string, r
 	}
 
 	// AI Security Check
-	if s.aiSecurityClient != nil {
-		securityRes, err := s.aiSecurityClient.DetectFraud(ctx, &ai_security.FraudRequest{
-			TransactionId: strconv.Itoa(int(time.Now().UnixNano())),
-			MerchantId:    int32(merchant.MerchantID),
-			UserId:        int32(card.UserID),
+	if s.aiSecurityAdapter != nil {
+		securityRes, err := s.aiSecurityAdapter.DetectFraud(ctx, &adapter.FraudCheckRequest{
+			TransactionID: strconv.Itoa(int(time.Now().UnixNano())),
+			MerchantID:    int(merchant.MerchantID),
+			UserID:        int(card.UserID),
 			Amount:        float64(request.Amount),
 			PaymentMethod: request.PaymentMethod,
 		})
-		if err == nil && securityRes.IsFraudulent {
+		if err == nil && securityRes != nil && securityRes.IsFraudulent {
 			status = "error"
 			s.logger.Warn("Transaction blocked by AI Security", zap.String("reason", securityRes.Reason))
 			return nil, errors.New("security block: " + securityRes.Reason)

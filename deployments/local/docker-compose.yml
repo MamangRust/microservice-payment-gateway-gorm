@@ -1,257 +1,151 @@
-name: pg-local
+name: payment-postgres-local
 
 services:
-      
-  auth-db: &postgres-base
+  # 1 database = 1 bounded context: tiga instance PostgreSQL terpisah,
+  # masing-masing di depan PgBouncer-nya sendiri. Service (dan migrasi) konek
+  # lewat pooler, jadi DB_<CONTEXT>_HOST menunjuk ke container PgBouncer.
+  # edoburu/pgbouncer selalu listen di port 5432 container; host memetakan
+  # 6432/6433/6434 supaya service host-run (.env) bisa connect via localhost.
+  postgres_identity:
     image: postgres:17-alpine
-    restart: always
+    container_name: payment-postgres-identity
     environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_identity
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - payment_postgres_identity_data:/var/lib/postgresql/data
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d auth_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  auth-bouncer: &bouncer-base
-    image: edoburu/pgbouncer:latest
-    restart: always
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@auth-db:5432/auth_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=auth-db
-      - DB_NAME=auth_db
-      - AUTH_TYPE=plain
-      - POOL_MODE=transaction
-      - PGB_LISTEN_PORT=6432
-      - MAX_CLIENT_CONN=1000
-      - DEFAULT_POOL_SIZE=20
-      - ADMIN_USERS=DRAGON
-    ports:
-      - "6432"
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U DRAGON"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pg_identity"]
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    depends_on:
-      auth-db:
-        condition: service_healthy
 
-  user-db:
-    <<: *postgres-base
+  pgbouncer_identity:
+    image: edoburu/pgbouncer:latest
+    container_name: payment-pgbouncer-identity
     environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=user_db
+      DB_HOST: postgres_identity
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: pg_identity
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MAX_PREPARED_STATEMENTS: "100"
+    ports:
+      - "6432:5432"
+    networks:
+      - app_network
+    depends_on:
+      postgres_identity:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d user_db"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d pg_identity"]
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  user-bouncer:
-    <<: *bouncer-base
+  postgres_payment:
+    image: postgres:17-alpine
+    container_name: payment-postgres-payment
     environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@user-db:5432/user_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=user-db
-      - DB_NAME=user_db
-      - AUTH_TYPE=plain
-    depends_on:
-      user-db:
-        condition: service_healthy
-
-  role-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=role_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_payment
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - payment_postgres_payment_data:/var/lib/postgresql/data
+    networks:
+      - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d role_db"]
-  
-  role-bouncer:
-    <<: *bouncer-base
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@role-db:5432/role_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=role-db
-      - DB_NAME=role_db
-      - AUTH_TYPE=plain
-    depends_on:
-      role-db:
-        condition: service_healthy
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pg_payment"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  card-db:
-    <<: *postgres-base
+  pgbouncer_payment:
+    image: edoburu/pgbouncer:latest
+    container_name: payment-pgbouncer-payment
     environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=card_db
+      DB_HOST: postgres_payment
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: pg_payment
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MAX_PREPARED_STATEMENTS: "100"
+    ports:
+      - "6433:5432"
+    networks:
+      - app_network
+    depends_on:
+      postgres_payment:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d card_db"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d pg_payment"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  card-bouncer:
-    <<: *bouncer-base
+  postgres_financial:
+    image: postgres:17-alpine
+    container_name: payment-postgres-financial
     environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@card-db:5432/card_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=card-db
-      - DB_NAME=card_db
-      - AUTH_TYPE=plain
-    depends_on:
-      card-db:
-        condition: service_healthy
-
-  merchant-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=merchant_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_financial
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - payment_postgres_financial_data:/var/lib/postgresql/data
+    networks:
+      - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d merchant_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pg_financial"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  merchant-bouncer:
-    <<: *bouncer-base
+  pgbouncer_financial:
+    image: edoburu/pgbouncer:latest
+    container_name: payment-pgbouncer-financial
     environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@merchant-db:5432/merchant_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=merchant-db
-      - DB_NAME=merchant_db
-      - AUTH_TYPE=plain
+      DB_HOST: postgres_financial
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: pg_financial
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MAX_PREPARED_STATEMENTS: "100"
+    ports:
+      - "6434:5432"
+    networks:
+      - app_network
     depends_on:
-      merchant-db:
+      postgres_financial:
         condition: service_healthy
-
-  saldo-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=saldo_db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d saldo_db"]
-
-  saldo-bouncer:
-    <<: *bouncer-base
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@saldo-db:5432/saldo_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=saldo-db
-      - DB_NAME=saldo_db
-      - AUTH_TYPE=plain
-    depends_on:
-      saldo-db:
-        condition: service_healthy
-
-  topup-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=topup_db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d topup_db"]
-
-  topup-bouncer:
-    <<: *bouncer-base
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@topup-db:5432/topup_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=topup-db
-      - DB_NAME=topup_db
-      - AUTH_TYPE=plain
-    depends_on:
-      topup-db:
-        condition: service_healthy
-
-  transaction-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=transaction_db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d transaction_db"]
-
-  transaction-bouncer:
-    <<: *bouncer-base
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@transaction-db:5432/transaction_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=transaction-db
-      - DB_NAME=transaction_db
-      - AUTH_TYPE=plain
-    depends_on:
-      transaction-db:
-        condition: service_healthy
-
-  transfer-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=transfer_db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d transfer_db"]
-
-  transfer-bouncer:
-    <<: *bouncer-base
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@transfer-db:5432/transfer_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=transfer-db
-      - DB_NAME=transfer_db
-      - AUTH_TYPE=plain
-    depends_on:
-      transfer-db:
-        condition: service_healthy
-
-  withdraw-db:
-    <<: *postgres-base
-    environment:
-      - POSTGRES_USER=DRAGON
-      - POSTGRES_PASSWORD=DRAGON
-      - POSTGRES_DB=withdraw_db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d withdraw_db"]
-
-  withdraw-bouncer:
-    <<: *bouncer-base
-    environment:
-      - DATABASE_URL=postgres://DRAGON:DRAGON@withdraw-db:5432/withdraw_db
-      - DB_USER=DRAGON
-      - DB_PASSWORD=DRAGON
-      - DB_HOST=withdraw-db
-      - DB_NAME=withdraw_db
-      - AUTH_TYPE=plain
-    depends_on:
-      withdraw-db:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d pg_financial"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   pyroscope:
     image: grafana/pyroscope:latest
@@ -352,14 +246,13 @@ services:
       - '--path.rootfs=/host'
 
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:24.8-alpine
     container_name: clickhouse
     ports:
       - "8123:8123"
       - "9000:9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
-      # Initialize event tables on a fresh data volume; existing volumes are migrated explicitly.
       - ../../pkg/clickhouse/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
     networks:
       - app_network
@@ -372,11 +265,8 @@ services:
       timeout: 10s
       retries: 5
 
-
-  # NOTE: single-node by design - host 7.2GiB, 3-node KRaft election-storms on this hardware
-  # (election timeout default 1000ms exceeded by JVM GC pauses). Scale back to 3-node on bigger hosts.
   kafka-1:
-    image: apache/kafka:latest
+    image: apache/kafka:4.3.1
     container_name: kafka-1
     ports:
       - "9092:9092"
@@ -387,25 +277,18 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093
-      # NOTE: apache/kafka image ignores KAFKA_CLUSTER_ID (entrypoint uses its own default for all nodes) - keep consistent across nodes
-      KAFKA_CLUSTER_ID: kraft-cluster-01
+      # CLUSTER_ID (bukan KAFKA_CLUSTER_ID) adalah key yang dibaca
+      # /etc/kafka/docker/configure; nilai lama diabaikan dan image jatuh ke
+      # default bawaannya.
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # Single-node dev: 50 partitions x ~30s metadata load on this 7.2GiB host wedges
-      # the broker for ~25min (healthcheck 10s always fails). 10 partitions keeps
-      # __consumer_offsets reload fast while still scaling past one consumer group.
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 10
       KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
-      # Host 7.2GiB penuh -> GC pause bisa >1s. Default election timeout 1000ms terlalu agresif,
-      # menyebabkan election storm & broker 'fatal error waiting for controller catch-up'.
       KAFKA_CONTROLLER_QUORUM_ELECTION_TIMEOUT_MS: 5000
       KAFKA_CONTROLLER_QUORUM_REQUEST_TIMEOUT_MS: 3000
       KAFKA_CONTROLLER_QUORUM_RETRY_BACKOFF_MS: 500
     networks:
       - app_network
-    # NOTE: previous healthcheck spawned a full JVM (kafka-broker-api-versions.sh)
-    # every 10s. On this 7.2GiB host the JVM takes 30s+ to start, so each check
-    # timed out at 10s and left a zombie java process behind (45+ zombies observed),
-    # wedging the broker. Use a lightweight TCP probe instead.
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/9092 && echo ok' || exit 1"]
       interval: 15s
@@ -425,8 +308,6 @@ services:
     networks:
       - app_network
 
-
-
   nginx:
     image: nginx:alpine
     container_name: nginx
@@ -438,7 +319,6 @@ services:
       - apigateway
     networks:
       - app_network
-
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -540,7 +420,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     ports:
-      # NOTE: main.go hardcodes ServerPort ":8080", so host 5000 maps to container 8080.
       - "5000:8080"
       - "8091:8091"
     networks:
@@ -578,8 +457,6 @@ services:
       - KAFKA_BROKERS=kafka-1:9092
       - REDIS_ADDRS=redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
 
-
-
   auth:
     image: microservice-payment-gateway-grpc/auth:latest
     container_name: auth
@@ -587,8 +464,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=auth-bouncer
-      - DB_NAME=auth_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=auth
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -598,7 +473,7 @@ services:
     networks:
       - app_network
     depends_on:
-      auth-bouncer:
+      pgbouncer_identity:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -614,8 +489,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=merchant-bouncer
-      - DB_NAME=merchant_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=merchant
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -625,7 +498,7 @@ services:
     networks:
       - app_network
     depends_on:
-      merchant-bouncer:
+      pgbouncer_payment:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -641,8 +514,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=card-bouncer
-      - DB_NAME=card_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=card
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -652,7 +523,7 @@ services:
     networks:
       - app_network
     depends_on:
-      card-bouncer:
+      pgbouncer_payment:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -668,8 +539,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=saldo-bouncer
-      - DB_NAME=saldo_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=saldo
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -679,7 +548,7 @@ services:
     networks:
       - app_network
     depends_on:
-      saldo-bouncer:
+      pgbouncer_payment:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -695,8 +564,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=role-bouncer
-      - DB_NAME=role_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=role
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -706,7 +573,7 @@ services:
     networks:
       - app_network
     depends_on:
-      role-bouncer:
+      pgbouncer_identity:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -722,8 +589,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=topup-bouncer
-      - DB_NAME=topup_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=topup
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -733,7 +598,7 @@ services:
     networks:
       - app_network
     depends_on:
-      topup-bouncer:
+      pgbouncer_financial:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -749,8 +614,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=transaction-bouncer
-      - DB_NAME=transaction_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=transaction
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -760,7 +623,7 @@ services:
     networks:
       - app_network
     depends_on:
-      transaction-bouncer:
+      pgbouncer_financial:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -776,8 +639,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=transfer-bouncer
-      - DB_NAME=transfer_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=transfer
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -787,7 +648,7 @@ services:
     networks:
       - app_network
     depends_on:
-      transfer-bouncer:
+      pgbouncer_financial:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -803,8 +664,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=user-bouncer
-      - DB_NAME=user_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=user
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -814,7 +673,7 @@ services:
     networks:
       - app_network
     depends_on:
-      user-bouncer:
+      pgbouncer_identity:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -850,8 +709,6 @@ services:
     volumes:
       - ./docker.env:/app/docker.env
     environment:
-      - DB_HOST=withdraw-bouncer
-      - DB_NAME=withdraw_db
       - OTEL_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=withdraw
       - PYROSCOPE_SERVER=http://pyroscope:4040
@@ -861,7 +718,7 @@ services:
     networks:
       - app_network
     depends_on:
-      withdraw-bouncer:
+      pgbouncer_financial:
         condition: service_healthy
       kafka-1:
         condition: service_started
@@ -943,6 +800,9 @@ services:
       - REDIS_PASSWORD=dragon_knight
 
 volumes:
+  payment_postgres_identity_data:
+  payment_postgres_payment_data:
+  payment_postgres_financial_data:
   loki-data:
   grafana-storage:
   kafka_data:

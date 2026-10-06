@@ -28,7 +28,6 @@ func NewServer(cfg *server.Config) (*server.GRPCServer, error) {
 		return nil, err
 	}
 
-	// gRPC Clients for cross-service communication
 	connSaldo, err := grpc.NewClient(viper.GetString("GRPC_SALDO_ADDR"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Saldo service: %w", err)
@@ -52,11 +51,28 @@ func NewServer(cfg *server.Config) (*server.GRPCServer, error) {
 
 	saldoGuard := resilience.NewDependencyGuard("saldo", 5, 30, 100, 3*time.Second, srv.Logger)
 	cardGuard := resilience.NewDependencyGuard("card", 5, 30, 100, 3*time.Second, srv.Logger)
+	aiSecurityGuard := resilience.NewDependencyGuard("ai_security", 5, 30, 100, 3*time.Second, srv.Logger)
 
 	saldoAdapter := adapter.NewSaldoAdapter(saldoClientQuery, saldoClientCmd, adapter.WithDependencyGuard(saldoGuard))
 	cardAdapter := adapter.NewCardAdapter(cardClientQuery, cardClientCmd, adapter.WithDependencyGuard(cardGuard))
+	aiSecurityAdapter := adapter.NewAISecurityAdapter(aiClient, adapter.WithDependencyGuard(aiSecurityGuard))
 
-	repos := repository.NewRepositories(srv.GormDB, cardAdapter, saldoAdapter)
+	repos := repository.NewRepositories(
+		srv.GormDB,
+		cardClientQuery,
+		cardClientCmd,
+		saldoClientQuery,
+		saldoClientCmd,
+		repository.GuardOptions{
+			Card: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("card", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+			Saldo: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("saldo", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+		},
+	)
+
 	kafkaBrokers := strings.Split(viper.GetString("KAFKA_BROKERS"), ",")
 	myKafka, err := kafka.NewKafka(srv.Logger, kafkaBrokers)
 	if err != nil {
@@ -77,7 +93,7 @@ func NewServer(cfg *server.Config) (*server.GRPCServer, error) {
 		Repositories:         repos,
 		Logger:               srv.Logger,
 		Cache:                srv.CacheStore,
-		AISecurityClient:     aiClient,
+		AISecurityAdapter:    aiSecurityAdapter,
 		CardAdapter:          cardAdapter,
 		SaldoAdapter:         saldoAdapter,
 		DailyWithdrawalLimit: dailyWithdrawalLimit,

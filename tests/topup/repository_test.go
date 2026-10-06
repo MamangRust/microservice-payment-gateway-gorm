@@ -41,16 +41,12 @@ func (s *TopupRepositoryTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.db = gormDB
 
-	userRepos := user_repo.NewRepositories(gormDB)
+	userRepos := user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient})
 	cardRepos := card_repo.NewRepositories(gormDB, nil)
-	saldoRepos := saldo_repo.NewRepositories(gormDB, nil)
+	saldoRepos := saldo_repo.NewRepositories(gormDB, nil, nil)
 
-	cardAdapter := &topupCardRepoAdapter{
-		CardQueryRepository:   cardRepos.CardQuery,
-		CardCommandRepository: cardRepos.CardCommand,
-	}
-	s.repo = topup_repo.NewRepositories(gormDB, cardAdapter, saldoRepos)
-	s.userRepo = userRepos.UserCommand()
+	s.repo = topup_repo.NewRepositories(gormDB, nil, nil, nil, nil)
+	s.userRepo = userRepos.UserCommand
 	s.cardRepo = cardRepos.CardCommand
 	s.saldoRepo = saldoRepos
 
@@ -176,6 +172,8 @@ func (s *TopupRepositoryTestSuite) TestDeleteTopupPermanent() {
 }
 
 func TestTopupRepositorySuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TopupRepositoryTestSuite))
 }

@@ -41,25 +41,23 @@ type ReconciliationQueueResult struct {
 
 // LedgerEntryResult is the response type for ledger entry queries.
 type LedgerEntryResult struct {
-	EntryID      int64
-	OperationID  string
-	CardNumber   string
-	Direction    string
-	Amount       int64
-	Delta        int64
+	EntryID       int64
+	OperationID   string
+	CardNumber    string
+	Direction     string
+	Amount        int64
+	Delta         int64
 	BalanceBefore int64
 	BalanceAfter  int64
-	SourceType   string
-	SourceID     *string
-	CreatedAt    time.Time
+	SourceType    string
+	SourceID      *string
+	CreatedAt     time.Time
 }
 
 // SaldoMutationResult is the response type for debit/credit/adjustment results.
-type SaldoMutationResult struct {
-	SaldoID      int32
-	CardNumber   string
-	TotalBalance int64
-}
+// Aliased to models.SaldoMutationResult so the gRPC adapter (pkg/adapter) can
+// return the same type without importing this package.
+type SaldoMutationResult = models.SaldoMutationResult
 
 // SaldoAdjustmentResult is the response type for saldo adjustment.
 type SaldoAdjustmentResult struct {

@@ -4,21 +4,20 @@ import (
 	"context"
 	"time"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	pbcard "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
 	pbsaldo "github.com/MamangRust/microservice-payment-gateway-grpc/pb/saldo"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/resilience"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/repository"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 	sharedErrors "github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors"
 )
 
 type SaldoAdapter interface {
 	FindByCardNumber(ctx context.Context, card_number string) (*models.Saldo, error)
-	UpdateSaldoBalance(ctx context.Context, request *requests.UpdateSaldoBalance) (*repository.SaldoMutationResult, error)
-	DebitSaldo(ctx context.Context, request *requests.DebitSaldoRequest) (*repository.SaldoMutationResult, error)
-	CreditSaldo(ctx context.Context, request *requests.CreditSaldoRequest) (*repository.SaldoMutationResult, error)
-	UpdateSaldoWithdraw(ctx context.Context, request *requests.UpdateSaldoWithdraw) (*repository.SaldoMutationResult, error)
+	UpdateSaldoBalance(ctx context.Context, request *requests.UpdateSaldoBalance) (*models.SaldoMutationResult, error)
+	DebitSaldo(ctx context.Context, request *requests.DebitSaldoRequest) (*models.SaldoMutationResult, error)
+	CreditSaldo(ctx context.Context, request *requests.CreditSaldoRequest) (*models.SaldoMutationResult, error)
+	UpdateSaldoWithdraw(ctx context.Context, request *requests.UpdateSaldoWithdraw) (*models.SaldoMutationResult, error)
 }
 
 type saldoGRPCAdapter struct {
@@ -27,11 +26,11 @@ type saldoGRPCAdapter struct {
 	guard         *resilience.DependencyGuard
 }
 
-func (a *saldoGRPCAdapter) setGuard(g *resilience.DependencyGuard) {
+func (a *saldoGRPCAdapter) SetGuard(g *resilience.DependencyGuard) {
 	a.guard = g
 }
 
-func NewSaldoAdapter(queryClient pbsaldo.SaldoQueryServiceClient, commandClient pbsaldo.SaldoCommandServiceClient, opts ...func(guardSetter)) SaldoAdapter {
+func NewSaldoAdapter(queryClient pbsaldo.SaldoQueryServiceClient, commandClient pbsaldo.SaldoCommandServiceClient, opts ...GuardOption) SaldoAdapter {
 	a := &saldoGRPCAdapter{
 		QueryClient:   queryClient,
 		CommandClient: commandClient,
@@ -44,7 +43,7 @@ func NewSaldoAdapter(queryClient pbsaldo.SaldoQueryServiceClient, commandClient 
 
 func (a *saldoGRPCAdapter) FindByCardNumber(ctx context.Context, card_number string) (*models.Saldo, error) {
 	var resp *pbsaldo.ApiResponseSaldo
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.QueryClient.FindByCardNumber(callCtx, &pbcard.FindByCardNumberRequest{
 			CardNumber: card_number,
@@ -77,20 +76,20 @@ func mapSaldoResponse(s *pbsaldo.SaldoResponse) (*models.Saldo, error) {
 	return saldo, nil
 }
 
-func mapMutationResponse(resp *pbsaldo.SaldoResponse) *repository.SaldoMutationResult {
+func mapMutationResponse(resp *pbsaldo.SaldoResponse) *models.SaldoMutationResult {
 	if resp == nil {
 		return nil
 	}
-	return &repository.SaldoMutationResult{
+	return &models.SaldoMutationResult{
 		SaldoID:      resp.SaldoId,
 		CardNumber:   resp.CardNumber,
 		TotalBalance: resp.TotalBalance,
 	}
 }
 
-func (a *saldoGRPCAdapter) UpdateSaldoBalance(ctx context.Context, request *requests.UpdateSaldoBalance) (*repository.SaldoMutationResult, error) {
+func (a *saldoGRPCAdapter) UpdateSaldoBalance(ctx context.Context, request *requests.UpdateSaldoBalance) (*models.SaldoMutationResult, error) {
 	var resp *pbsaldo.ApiResponseSaldo
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.CommandClient.UpdateSaldo(callCtx, &pbsaldo.UpdateSaldoRequest{
 			CardNumber:   request.CardNumber,
@@ -104,9 +103,9 @@ func (a *saldoGRPCAdapter) UpdateSaldoBalance(ctx context.Context, request *requ
 	return mapMutationResponse(resp.Data), nil
 }
 
-func (a *saldoGRPCAdapter) DebitSaldo(ctx context.Context, request *requests.DebitSaldoRequest) (*repository.SaldoMutationResult, error) {
+func (a *saldoGRPCAdapter) DebitSaldo(ctx context.Context, request *requests.DebitSaldoRequest) (*models.SaldoMutationResult, error) {
 	var resp *pbsaldo.ApiResponseSaldo
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.CommandClient.DebitSaldo(callCtx, &pbsaldo.DebitSaldoRequest{
 			CardNumber:  request.CardNumber,
@@ -126,9 +125,9 @@ func (a *saldoGRPCAdapter) DebitSaldo(ctx context.Context, request *requests.Deb
 	return mapMutationResponse(resp.Data), nil
 }
 
-func (a *saldoGRPCAdapter) CreditSaldo(ctx context.Context, request *requests.CreditSaldoRequest) (*repository.SaldoMutationResult, error) {
+func (a *saldoGRPCAdapter) CreditSaldo(ctx context.Context, request *requests.CreditSaldoRequest) (*models.SaldoMutationResult, error) {
 	var resp *pbsaldo.ApiResponseSaldo
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.CommandClient.CreditSaldo(callCtx, &pbsaldo.CreditSaldoRequest{
 			CardNumber:  request.CardNumber,
@@ -148,9 +147,9 @@ func (a *saldoGRPCAdapter) CreditSaldo(ctx context.Context, request *requests.Cr
 	return mapMutationResponse(resp.Data), nil
 }
 
-func (a *saldoGRPCAdapter) UpdateSaldoWithdraw(ctx context.Context, request *requests.UpdateSaldoWithdraw) (*repository.SaldoMutationResult, error) {
+func (a *saldoGRPCAdapter) UpdateSaldoWithdraw(ctx context.Context, request *requests.UpdateSaldoWithdraw) (*models.SaldoMutationResult, error) {
 	var resp *pbsaldo.ApiResponseSaldo
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.CommandClient.UpdateSaldoWithdraw(callCtx, &pbsaldo.UpdateSaldoWithdrawRequest{
 			CardNumber:     request.CardNumber,
@@ -164,32 +163,4 @@ func (a *saldoGRPCAdapter) UpdateSaldoWithdraw(ctx context.Context, request *req
 		return nil, err
 	}
 	return mapMutationResponse(resp.Data), nil
-}
-
-type localSaldoAdapter struct {
-	repo repository.Repositories
-}
-
-func NewLocalSaldoAdapter(repo repository.Repositories) SaldoAdapter {
-	return &localSaldoAdapter{repo: repo}
-}
-
-func (a *localSaldoAdapter) FindByCardNumber(ctx context.Context, card_number string) (*models.Saldo, error) {
-	return a.repo.FindByCardNumber(ctx, card_number)
-}
-
-func (a *localSaldoAdapter) UpdateSaldoBalance(ctx context.Context, request *requests.UpdateSaldoBalance) (*repository.SaldoMutationResult, error) {
-	return a.repo.UpdateSaldoBalance(ctx, request)
-}
-
-func (a *localSaldoAdapter) DebitSaldo(ctx context.Context, request *requests.DebitSaldoRequest) (*repository.SaldoMutationResult, error) {
-	return a.repo.DebitSaldo(ctx, request)
-}
-
-func (a *localSaldoAdapter) CreditSaldo(ctx context.Context, request *requests.CreditSaldoRequest) (*repository.SaldoMutationResult, error) {
-	return a.repo.CreditSaldo(ctx, request)
-}
-
-func (a *localSaldoAdapter) UpdateSaldoWithdraw(ctx context.Context, request *requests.UpdateSaldoWithdraw) (*repository.SaldoMutationResult, error) {
-	return a.repo.UpdateSaldoWithdraw(ctx, request)
 }

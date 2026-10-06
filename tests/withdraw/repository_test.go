@@ -9,8 +9,8 @@ import (
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	saldo_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/repository"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/service/withdraw/repository"
 	user_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/user/repository"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/service/withdraw/repository"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 	tests "github.com/MamangRust/microservice-payment-gateway-test"
 	"gorm.io/gorm"
@@ -42,7 +42,7 @@ func (s *WithdrawRepositoryTestSuite) SetupSuite() {
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
 	s.cardRepo = card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil, nil)
 	s.repo = repository.NewWithdrawCommandRepository(gormDB)
 	s.queryRepo = repository.NewWithdrawQueryRepository(gormDB)
 }

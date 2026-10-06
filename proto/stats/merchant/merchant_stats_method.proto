@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package pb.stats.merchant;
+
+option go_package = 'github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/merchant';
+
+import "merchant/merchant.proto";
+
+message MerchantResponseMonthlyPaymentMethod {
+  string month = 1;
+  string payment_method = 2;
+  int64 total_amount = 3;
+}
+
+message MerchantResponseYearlyPaymentMethod {
+  string year = 1;
+  string payment_method = 2;
+  int64 total_amount = 3;
+}
+
+message ApiResponseMerchantMonthlyPaymentMethod {
+  string status = 1;
+  string message = 2;
+  repeated MerchantResponseMonthlyPaymentMethod data = 3;
+}
+
+message ApiResponseMerchantYearlyPaymentMethod {
+  string status = 1;
+  string message = 2;
+  repeated MerchantResponseYearlyPaymentMethod data = 3;
+}
+
+service MerchantStatsMethodService {
+  rpc FindMonthlyPaymentMethodsMerchant(pb.merchant.FindYearMerchant)
+      returns (ApiResponseMerchantMonthlyPaymentMethod) {}
+  rpc FindYearlyPaymentMethodMerchant(pb.merchant.FindYearMerchant)
+      returns (ApiResponseMerchantYearlyPaymentMethod) {}
+  rpc FindMonthlyPaymentMethodByMerchants(pb.merchant.FindYearMerchantById)
+      returns (ApiResponseMerchantMonthlyPaymentMethod) {}
+  rpc FindYearlyPaymentMethodByMerchants(pb.merchant.FindYearMerchantById)
+      returns (ApiResponseMerchantYearlyPaymentMethod) {}
+  rpc FindMonthlyPaymentMethodByApikey(pb.merchant.FindYearMerchantByApikey)
+      returns (ApiResponseMerchantMonthlyPaymentMethod) {}
+  rpc FindYearlyPaymentMethodByApikey(pb.merchant.FindYearMerchantByApikey)
+      returns (ApiResponseMerchantYearlyPaymentMethod) {}
+}

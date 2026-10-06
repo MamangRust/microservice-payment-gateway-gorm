@@ -39,8 +39,8 @@ func (s *SaldoAtomicRepositoryTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.db = gormDB
 
-	s.repo = saldo_repo.NewRepositories(gormDB, nil)
-	s.userRepo = user_repo.NewRepositories(gormDB).UserCommand()
+	s.repo = saldo_repo.NewRepositories(gormDB, nil, nil)
+	s.userRepo = user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient}).UserCommand
 	s.cardRepo = card_repo.NewRepositories(gormDB, nil).CardCommand
 }
 
@@ -105,7 +105,9 @@ func (s *SaldoAtomicRepositoryTestSuite) TestConcurrentDebitsNeverOverspend() {
 
 	successes := 0
 	for err := range results {
-		if err == nil { successes++ }
+		if err == nil {
+			successes++
+		}
 	}
 	s.Equal(10, successes)
 
@@ -115,6 +117,8 @@ func (s *SaldoAtomicRepositoryTestSuite) TestConcurrentDebitsNeverOverspend() {
 }
 
 func TestSaldoAtomicRepositorySuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(SaldoAtomicRepositoryTestSuite))
 }

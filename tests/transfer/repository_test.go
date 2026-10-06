@@ -20,13 +20,13 @@ import (
 
 type TransferRepositoryTestSuite struct {
 	suite.Suite
-	ts          *tests.TestSuite
-	db          *gorm.DB
-	commandRepo repository.TransferCommandRepository
-	queryRepo   repository.TransferQueryRepository
-	userRepo    user_repo.UserCommandRepository
-	cardRepo    card_repo.Repositories
-	saldoRepo   saldo_repo.Repositories
+	ts                 *tests.TestSuite
+	db                 *gorm.DB
+	commandRepo        repository.TransferCommandRepository
+	queryRepo          repository.TransferQueryRepository
+	userRepo           user_repo.UserCommandRepository
+	cardRepo           card_repo.Repositories
+	saldoRepo          saldo_repo.Repositories
 	senderCardNumber   string
 	receiverCardNumber string
 }
@@ -43,7 +43,7 @@ func (s *TransferRepositoryTestSuite) SetupSuite() {
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
 	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil, nil)
 	s.commandRepo = repository.NewTransferCommandRepository(gormDB)
 	s.queryRepo = repository.NewTransferQueryRepository(gormDB)
 
@@ -101,6 +101,8 @@ func (s *TransferRepositoryTestSuite) TestFindById() {
 }
 
 func TestTransferRepositorySuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TransferRepositoryTestSuite))
 }

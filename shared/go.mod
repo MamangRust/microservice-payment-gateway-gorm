@@ -7,7 +7,6 @@ require (
 	github.com/MamangRust/microservice-payment-gateway-grpc/pkg v0.0.0
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/google/uuid v1.6.0
-	github.com/labstack/echo/v4 v4.15.0
 	github.com/redis/go-redis/v9 v9.17.3
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/metric v1.43.0

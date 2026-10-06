@@ -7,10 +7,6 @@ import (
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 )
 
-type UserRepository interface {
-	FindById(ctx context.Context, user_id int) (*models.User, error)
-}
-
 type MerchantQueryRepository interface {
 	FindAllMerchants(ctx context.Context, req *requests.FindAllMerchants) ([]*models.Merchant, error)
 	FindByActive(ctx context.Context, req *requests.FindAllMerchants) ([]*models.Merchant, error)

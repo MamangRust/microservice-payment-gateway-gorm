@@ -52,7 +52,7 @@ func (s *TransferServiceTestSuite) SetupSuite() {
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
 	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil, nil)
 
 	logger.ResetInstance()
 	lp := sdklog.NewLoggerProvider()
@@ -60,9 +60,7 @@ func (s *TransferServiceTestSuite) SetupSuite() {
 	cacheMetrics, _ := observability.NewCacheMetrics("test")
 	cacheStore := cache.NewCacheStore(s.redisClient, log, cacheMetrics)
 
-	saldoAdapter := &transferSaldoRepoAdapter{saldoRepo: s.saldoRepo}
-	cardAdapter := &transferCardRepoAdapter{cardRepo: s.cardRepo}
-	transferRepos := repository.NewRepositories(gormDB, saldoAdapter, cardAdapter)
+	transferRepos := repository.NewRepositories(gormDB, nil, nil, nil, nil)
 
 	s.transferService = service.NewService(&service.Deps{
 		Kafka: nil, Repositories: transferRepos, SaldoAdapter: s.ts.SaldoAdapter,
@@ -110,6 +108,8 @@ func (s *TransferServiceTestSuite) TestCreateTransfer() {
 }
 
 func TestTransferServiceSuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TransferServiceTestSuite))
 }

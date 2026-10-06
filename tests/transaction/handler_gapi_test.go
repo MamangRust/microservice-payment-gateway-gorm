@@ -8,8 +8,8 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	pbAISecurity "github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transaction"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transaction"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transaction/stats"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	merchant_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/merchant/repository"
@@ -36,21 +36,21 @@ import (
 
 type TransactionGapiTestSuite struct {
 	suite.Suite
-	ts            *tests.TestSuite
-	db            *gorm.DB
-	redisClient   redis.UniversalClient
-	chConn        clickhouse.Conn
-	grpcServer    *grpc.Server
-	conn          *grpc.ClientConn
-	commandClient pb.TransactionCommandServiceClient
-	queryClient   pb.TransactionQueryServiceClient
-	userRepo      user_repo.UserCommandRepository
-	cardRepo      card_repo.Repositories
-	saldoRepo     saldo_repo.Repositories
-	merchantRepo  merchant_repo.Repositories
+	ts                 *tests.TestSuite
+	db                 *gorm.DB
+	redisClient        redis.UniversalClient
+	chConn             clickhouse.Conn
+	grpcServer         *grpc.Server
+	conn               *grpc.ClientConn
+	commandClient      pb.TransactionCommandServiceClient
+	queryClient        pb.TransactionQueryServiceClient
+	userRepo           user_repo.UserCommandRepository
+	cardRepo           card_repo.Repositories
+	saldoRepo          saldo_repo.Repositories
+	merchantRepo       merchant_repo.Repositories
 	customerCardNumber string
-	merchantID    int
-	merchantApiKey string
+	merchantID         int
+	merchantApiKey     string
 }
 
 func (s *TransactionGapiTestSuite) SetupSuite() {
@@ -77,7 +77,7 @@ func (s *TransactionGapiTestSuite) SetupSuite() {
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
 	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil, nil)
 	s.merchantRepo = merchant_repo.NewRepositories(gormDB, nil)
 
 	opts, err := redis.ParseURL(s.ts.RedisURL)
@@ -90,13 +90,10 @@ func (s *TransactionGapiTestSuite) SetupSuite() {
 	cacheMetrics, _ := observability.NewCacheMetrics("test")
 	cacheStore := cache.NewCacheStore(s.redisClient, log, cacheMetrics)
 
-	cardRepoWrapper := &transactionCardRepo{
-		query: s.cardRepo.CardQuery, command: s.cardRepo.CardCommand,
-	}
-	transactionRepos := repository.NewRepositories(gormDB, s.saldoRepo, cardRepoWrapper, s.merchantRepo)
+	transactionRepos := repository.NewRepositories(gormDB, nil, nil, nil, nil, nil)
 	transactionService := service.NewService(&service.Deps{
 		Kafka: nil, Repositories: transactionRepos, MerchantAdapter: s.ts.MerchantAdapter,
-		CardAdapter: s.ts.CardAdapter, SaldoAdapter: s.ts.SaldoAdapter, Logger: log, Cache: cacheStore, AISecurityClient: nil,
+		CardAdapter: s.ts.CardAdapter, SaldoAdapter: s.ts.SaldoAdapter, Logger: log, Cache: cacheStore, AISecurityAdapter: nil,
 	})
 
 	// Seed Customer
@@ -160,10 +157,16 @@ func (s *TransactionGapiTestSuite) SetupSuite() {
 }
 
 func (s *TransactionGapiTestSuite) TearDownSuite() {
-	if s.conn != nil { s.conn.Close() }
-	if s.grpcServer != nil { s.grpcServer.Stop() }
+	if s.conn != nil {
+		s.conn.Close()
+	}
+	if s.grpcServer != nil {
+		s.grpcServer.Stop()
+	}
 	s.redisClient.Close()
-	if s.chConn != nil { s.chConn.Close() }
+	if s.chConn != nil {
+		s.chConn.Close()
+	}
 	s.ts.Teardown()
 }
 
@@ -196,6 +199,8 @@ func (s *TransactionGapiTestSuite) Test11_BulkOperations() {
 }
 
 func TestTransactionGapiSuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TransactionGapiTestSuite))
 }

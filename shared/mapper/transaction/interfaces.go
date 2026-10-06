@@ -2,7 +2,7 @@ package transactionapimapper
 
 import (
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transaction"
-	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transaction/stats"
+	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transaction"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/response"
 )
 

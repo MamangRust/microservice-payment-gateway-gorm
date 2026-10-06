@@ -116,6 +116,8 @@ func (s *MerchantServiceTestSuite) Test7_BulkOperations() {
 }
 
 func TestMerchantServiceSuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(MerchantServiceTestSuite))
 }

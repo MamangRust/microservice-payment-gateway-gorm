@@ -14,8 +14,8 @@ func intPtr(v int) *int { return &v }
 
 type UserRepositoryTestSuite struct {
 	suite.Suite
-	ts     *TestSuite
-	repo   repository.Repositories
+	ts   *TestSuite
+	repo *repository.Repositories
 }
 
 func TestUserRepositorySuite(t *testing.T) {
@@ -39,7 +39,11 @@ func (s *UserRepositoryTestSuite) SetupSuite() {
 	gormDB, err := s.ts.GormDB()
 	require.NoError(s.T(), err)
 
-	s.repo = repository.NewRepositories(gormDB)
+	s.repo = repository.NewRepositories(&repository.Deps{
+		Db:              gormDB,
+		RoleQueryClient: s.ts.RoleQueryClient,
+		UserRoleClient:  s.ts.UserRoleClient,
+	})
 }
 
 func (s *UserRepositoryTestSuite) TearDownSuite() {
@@ -55,7 +59,7 @@ func (s *UserRepositoryTestSuite) TestCreateUser() {
 		ConfirmPassword: "hashed_password",
 	}
 
-	user, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	user, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 	assert.NotZero(s.T(), user.UserID)
 	assert.Equal(s.T(), "John", user.Firstname)
@@ -72,11 +76,11 @@ func (s *UserRepositoryTestSuite) TestFindById() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
 	// Find by ID
-	user, err := s.repo.UserQuery().FindById(s.ts.Ctx, int(created.UserID))
+	user, err := s.repo.UserQuery.FindById(s.ts.Ctx, int(created.UserID))
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "Jane", user.Firstname)
 	assert.Equal(s.T(), "Smith", user.Lastname)
@@ -90,10 +94,10 @@ func (s *UserRepositoryTestSuite) TestFindByEmail() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	_, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	_, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
-	user, err := s.repo.UserQuery().FindByEmail(s.ts.Ctx, "findbyemail@example.com")
+	user, err := s.repo.UserQuery.FindByEmail(s.ts.Ctx, "findbyemail@example.com")
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "Find", user.Firstname)
 }
@@ -105,7 +109,7 @@ func (s *UserRepositoryTestSuite) TestFindAllUsers() {
 		Search:   "",
 	}
 
-	users, err := s.repo.UserQuery().FindAllUsers(s.ts.Ctx, req)
+	users, err := s.repo.UserQuery.FindAllUsers(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 	assert.NotNil(s.T(), users)
 }
@@ -119,7 +123,7 @@ func (s *UserRepositoryTestSuite) TestUpdateUser() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, createReq)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, createReq)
 	require.NoError(s.T(), err)
 
 	// Update it
@@ -131,7 +135,7 @@ func (s *UserRepositoryTestSuite) TestUpdateUser() {
 		Password:        "new_hashed_password",
 		ConfirmPassword: "new_hashed_password",
 	}
-	updated, err := s.repo.UserCommand().UpdateUser(s.ts.Ctx, updateReq)
+	updated, err := s.repo.UserCommand.UpdateUser(s.ts.Ctx, updateReq)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "Updated", updated.Firstname)
 	assert.Equal(s.T(), "User", updated.Lastname)
@@ -145,10 +149,10 @@ func (s *UserRepositoryTestSuite) TestTrashedUser() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
-	trashed, err := s.repo.UserCommand().TrashedUser(s.ts.Ctx, int(created.UserID))
+	trashed, err := s.repo.UserCommand.TrashedUser(s.ts.Ctx, int(created.UserID))
 	require.NoError(s.T(), err)
 	assert.NotNil(s.T(), trashed.DeletedAt)
 }
@@ -161,15 +165,15 @@ func (s *UserRepositoryTestSuite) TestRestoreUser() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
 	// Trash it
-	_, err = s.repo.UserCommand().TrashedUser(s.ts.Ctx, int(created.UserID))
+	_, err = s.repo.UserCommand.TrashedUser(s.ts.Ctx, int(created.UserID))
 	require.NoError(s.T(), err)
 
 	// Restore it
-	restored, err := s.repo.UserCommand().RestoreUser(s.ts.Ctx, int(created.UserID))
+	restored, err := s.repo.UserCommand.RestoreUser(s.ts.Ctx, int(created.UserID))
 	require.NoError(s.T(), err)
 	assert.Nil(s.T(), restored.DeletedAt)
 }
@@ -182,10 +186,10 @@ func (s *UserRepositoryTestSuite) TestDeleteUserPermanent() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
-	deleted, err := s.repo.UserCommand().DeleteUserPermanent(s.ts.Ctx, int(created.UserID))
+	deleted, err := s.repo.UserCommand.DeleteUserPermanent(s.ts.Ctx, int(created.UserID))
 	require.NoError(s.T(), err)
 	assert.True(s.T(), deleted)
 }
@@ -198,10 +202,10 @@ func (s *UserRepositoryTestSuite) TestUpdateIsVerified() {
 		Password:        "hashed_password",
 		ConfirmPassword: "hashed_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
-	updated, err := s.repo.UserCommand().UpdateIsVerified(s.ts.Ctx, int(created.UserID), true)
+	updated, err := s.repo.UserCommand.UpdateIsVerified(s.ts.Ctx, int(created.UserID), true)
 	require.NoError(s.T(), err)
 	assert.NotNil(s.T(), updated)
 }
@@ -214,10 +218,10 @@ func (s *UserRepositoryTestSuite) TestUpdatePassword() {
 		Password:        "old_password",
 		ConfirmPassword: "old_password",
 	}
-	created, err := s.repo.UserCommand().CreateUser(s.ts.Ctx, req)
+	created, err := s.repo.UserCommand.CreateUser(s.ts.Ctx, req)
 	require.NoError(s.T(), err)
 
-	updated, err := s.repo.UserCommand().UpdatePassword(s.ts.Ctx, int(created.UserID), "new_password")
+	updated, err := s.repo.UserCommand.UpdatePassword(s.ts.Ctx, int(created.UserID), "new_password")
 	require.NoError(s.T(), err)
 	assert.NotNil(s.T(), updated)
 }

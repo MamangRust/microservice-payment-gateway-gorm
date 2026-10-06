@@ -6,7 +6,6 @@ import (
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/cache"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/observability"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	mencache "github.com/MamangRust/microservice-payment-gateway-grpc/service/transfer/redis"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/transfer/repository"
@@ -23,13 +22,13 @@ type service struct {
 }
 
 type Deps struct {
-	Kafka            *kafka.Kafka
-	Cache            *cache.CacheStore
-	Repositories     repository.Repositories
-	CardAdapter      adapter.CardAdapter
-	SaldoAdapter     adapter.SaldoAdapter
-	Logger           logger.LoggerInterface
-	AISecurityClient ai_security.AISecurityServiceClient
+	Kafka             *kafka.Kafka
+	Cache             *cache.CacheStore
+	Repositories      repository.Repositories
+	CardAdapter       adapter.CardAdapter
+	SaldoAdapter      adapter.SaldoAdapter
+	Logger            logger.LoggerInterface
+	AISecurityAdapter adapter.AISecurityAdapter
 }
 
 func NewService(deps *Deps) Service {
@@ -67,7 +66,7 @@ func newTransferCommandService(deps *Deps, observability observability.TraceLogg
 			OutboxStore:               deps.Repositories,
 			Logger:                    deps.Logger,
 			Observability:             observability,
-			AISecurityClient:          deps.AISecurityClient,
+			AISecurityAdapter:         deps.AISecurityAdapter,
 		},
 	)
 }

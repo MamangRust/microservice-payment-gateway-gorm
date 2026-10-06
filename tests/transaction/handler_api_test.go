@@ -16,7 +16,7 @@ import (
 	pbAISecurity "github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
 	pb_merchant "github.com/MamangRust/microservice-payment-gateway-grpc/pb/merchant"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transaction"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transaction/stats"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transaction"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	api_transaction "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/handler/transaction"
 	mencache "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/redis"
@@ -90,9 +90,9 @@ func (s *TransactionHandlerTestSuite) SetupSuite() {
 		) ENGINE = MergeTree() ORDER BY (merchant_id, created_at)`)
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
-	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
-	s.merchantRepo = merchant_repo.NewRepositories(gormDB, nil)
+	s.cardRepo = *card_repo.NewRepositories(gormDB, s.ts.UserClient)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, s.ts.CardClient, s.ts.CardClient)
+	s.merchantRepo = merchant_repo.NewRepositories(gormDB, s.ts.UserClient)
 
 	opts, err := redis.ParseURL(s.ts.RedisURL)
 	s.Require().NoError(err)
@@ -105,13 +105,10 @@ func (s *TransactionHandlerTestSuite) SetupSuite() {
 	cacheMetrics, _ := observability.NewCacheMetrics("test")
 	cacheStore := cache.NewCacheStore(s.redisClient, log, cacheMetrics)
 
-	cardRepoWrapper := &transactionCardRepo{
-		query: s.cardRepo.CardQuery, command: s.cardRepo.CardCommand,
-	}
-	transactionRepos := repository.NewRepositories(gormDB, s.saldoRepo, cardRepoWrapper, s.merchantRepo)
+	transactionRepos := repository.NewRepositories(gormDB, s.ts.SaldoClient, s.ts.SaldoClient, s.ts.CardClient, s.ts.CardClient, s.ts.MerchantClient)
 	transactionService := service.NewService(&service.Deps{
 		Kafka: nil, Repositories: transactionRepos, MerchantAdapter: s.ts.MerchantAdapter,
-		CardAdapter: s.ts.CardAdapter, SaldoAdapter: s.ts.SaldoAdapter, Logger: log, Cache: cacheStore, AISecurityClient: nil,
+		CardAdapter: s.ts.CardAdapter, SaldoAdapter: s.ts.SaldoAdapter, Logger: log, Cache: cacheStore, AISecurityAdapter: nil,
 	})
 
 	// Seed Customer

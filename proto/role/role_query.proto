@@ -30,6 +30,5 @@ service RoleQueryService {
   rpc FindByTrashed(FindAllRoleRequest)
       returns (ApiResponsePaginationRoleDeleteAt) {}
 
-  rpc FindByUserId(FindByIdUserRoleRequest) returns (ApiResponsesRole) {}
   rpc FindByNameRole(FindByNameRoleRequest) returns (ApiResponseRole) {}
 }

@@ -25,8 +25,11 @@ func TestProbeFindByUserIdCard(t *testing.T) {
 	}
 
 	env := append(os.Environ(),
-		"APP_ENV=test", "DB_DRIVER=postgres", "DB_HOST=localhost", "DB_PORT=5436",
-		"DB_NAME=card_db", "DB_USERNAME=DRAGON", "DB_PASSWORD=DRAGON", "SECRET_KEY=yantopedia",
+		"APP_ENV=test", "DB_DRIVER=postgres", "DB_USERNAME=postgres", "DB_PASSWORD=password",
+		"DB_IDENTITY_HOST=localhost", "DB_IDENTITY_PORT=6432", "DB_IDENTITY_NAME=pg_identity",
+		"DB_PAYMENT_HOST=localhost", "DB_PAYMENT_PORT=6433", "DB_PAYMENT_NAME=pg_payment",
+		"DB_FINANCIAL_HOST=localhost", "DB_FINANCIAL_PORT=6434", "DB_FINANCIAL_NAME=pg_financial",
+		"SECRET_KEY=yantopedia",
 		"KAFKA_BROKERS=localhost:9092", "REDIS_ADDRS=localhost:6379", "REDIS_PASSWORD=dragon_knight",
 		"REDIS_DB=0", "GRPC_USER_ADDR=localhost:50055",
 	)

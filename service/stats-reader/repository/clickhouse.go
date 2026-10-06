@@ -12,6 +12,50 @@ type ClickHouseReaderRepository struct {
 	conn clickhouse.Conn
 }
 
+// allowedTables, allowedFilterFields and allowedStatuses are the only values
+// the generic (table-driven) repository will interpolate into SQL. ClickHouse
+// cannot bind identifiers, so table/column names must be fixed at compile time;
+// these allowlists keep the interpolation from becoming an injection sink if a
+// caller ever forwards a request-derived value.
+var (
+	allowedTables = map[string]bool{
+		"transaction_events": true,
+		"topup_events":       true,
+		"transfer_events":    true,
+		"withdraw_events":    true,
+		"saldo_events":       true,
+		"card_events":        true,
+		"merchant_events":    true,
+	}
+	allowedFilterFields = map[string]bool{
+		"card_number":      true,
+		"merchant_id":      true,
+		"apikey":           true,
+		"source_card":      true,
+		"destination_card": true,
+	}
+	allowedStatuses = map[string]bool{
+		"success": true,
+		"failed":  true,
+		"pending": true,
+	}
+)
+
+// validateStatsQuery rejects any table, filter field or status outside the
+// allowlists above.
+func validateStatsQuery(table, filterField, targetStatus string) error {
+	if !allowedTables[table] {
+		return fmt.Errorf("stats repository: unsupported table %q", table)
+	}
+	if filterField != "" && !allowedFilterFields[filterField] {
+		return fmt.Errorf("stats repository: unsupported filter field %q", filterField)
+	}
+	if targetStatus != "" && !allowedStatuses[targetStatus] {
+		return fmt.Errorf("stats repository: unsupported status %q", targetStatus)
+	}
+	return nil
+}
+
 func NewClickHouseReaderRepository(conn clickhouse.Conn) *ClickHouseReaderRepository {
 	return &ClickHouseReaderRepository{conn: conn}
 }
@@ -60,6 +104,10 @@ type YearlyStatusStats struct {
 // --- Dynamic Table-Driven Methods for Parity ---
 
 func (r *ClickHouseReaderRepository) GetMonthlyAmounts(ctx context.Context, table string, filterField string, filterValue interface{}, year int) ([]MonthlyAmount, error) {
+	if err := validateStatsQuery(table, filterField, ""); err != nil {
+		return nil, err
+	}
+
 	where := ""
 	if table == "saldo_events" {
 		where = fmt.Sprintf("toYear(created_at) = %d", year)
@@ -91,6 +139,10 @@ func (r *ClickHouseReaderRepository) GetMonthlyAmounts(ctx context.Context, tabl
 }
 
 func (r *ClickHouseReaderRepository) GetYearlyAmounts(ctx context.Context, table string, filterField string, filterValue interface{}, startYear, endYear int) ([]YearlyAmount, error) {
+	if err := validateStatsQuery(table, filterField, ""); err != nil {
+		return nil, err
+	}
+
 	where := ""
 	if table == "saldo_events" {
 		where = fmt.Sprintf("toYear(created_at) >= %d AND toYear(created_at) <= %d", startYear, endYear)
@@ -122,6 +174,10 @@ func (r *ClickHouseReaderRepository) GetYearlyAmounts(ctx context.Context, table
 }
 
 func (r *ClickHouseReaderRepository) GetMonthlyStatusStats(ctx context.Context, table string, filterField string, filterValue interface{}, year int, targetStatus string) ([]MonthlyStatusStats, error) {
+	if err := validateStatsQuery(table, filterField, targetStatus); err != nil {
+		return nil, err
+	}
+
 	where := fmt.Sprintf("toYear(created_at) = %d", year)
 	if targetStatus != "" {
 		where += fmt.Sprintf(" AND status = '%s'", targetStatus)
@@ -145,6 +201,10 @@ func (r *ClickHouseReaderRepository) GetMonthlyStatusStats(ctx context.Context, 
 }
 
 func (r *ClickHouseReaderRepository) GetYearlyStatusStats(ctx context.Context, table string, filterField string, filterValue interface{}, currentYear int, targetStatus string) ([]YearlyStatusStats, error) {
+	if err := validateStatsQuery(table, filterField, targetStatus); err != nil {
+		return nil, err
+	}
+
 	where := fmt.Sprintf("(toYear(created_at) = %d OR toYear(created_at) = %d)", currentYear, currentYear-1)
 	if targetStatus != "" {
 		where += fmt.Sprintf(" AND status = '%s'", targetStatus)
@@ -168,6 +228,10 @@ func (r *ClickHouseReaderRepository) GetYearlyStatusStats(ctx context.Context, t
 }
 
 func (r *ClickHouseReaderRepository) GetMonthlyMethodStats(ctx context.Context, table string, filterField string, filterValue interface{}, year int) ([]MonthlyMethodStats, error) {
+	if err := validateStatsQuery(table, filterField, ""); err != nil {
+		return nil, err
+	}
+
 	where := fmt.Sprintf("toYear(created_at) = %d AND status = 'success'", year)
 	if filterField != "" {
 		where += fmt.Sprintf(" AND %s = ?", filterField)
@@ -193,6 +257,10 @@ func (r *ClickHouseReaderRepository) GetMonthlyMethodStats(ctx context.Context, 
 }
 
 func (r *ClickHouseReaderRepository) GetYearlyMethodStats(ctx context.Context, table string, filterField string, filterValue interface{}, startYear, endYear int) ([]YearlyMethodStats, error) {
+	if err := validateStatsQuery(table, filterField, ""); err != nil {
+		return nil, err
+	}
+
 	where := fmt.Sprintf("toYear(created_at) >= %d AND toYear(created_at) <= %d AND status = 'success'", startYear, endYear)
 	if filterField != "" {
 		where += fmt.Sprintf(" AND %s = ?", filterField)

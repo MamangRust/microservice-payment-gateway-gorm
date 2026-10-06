@@ -2,10 +2,15 @@ package usecase
 
 import (
 	"context"
+
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/stats-writer/repository"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/events"
 )
 
+// UseCase maps each Kafka event type to a repository insert.
+//
+// Implementasinya dipecah per domain — satu file per event type (transaction.go,
+// topup.go, dst.) supaya menambah event baru tidak menumpuk di satu file.
 type UseCase interface {
 	SaveTransactionEvent(ctx context.Context, event events.TransactionEvent) error
 	SaveTopupEvent(ctx context.Context, event events.TopupEvent) error
@@ -26,34 +31,6 @@ func NewStatsUseCase(repo repository.Repository) UseCase {
 	return &statsUseCase{
 		repo: repo,
 	}
-}
-
-func (u *statsUseCase) SaveTransactionEvent(ctx context.Context, event events.TransactionEvent) error {
-	return u.repo.InsertTransactionEvent(ctx, event)
-}
-
-func (u *statsUseCase) SaveTopupEvent(ctx context.Context, event events.TopupEvent) error {
-	return u.repo.InsertTopupEvent(ctx, event)
-}
-
-func (u *statsUseCase) SaveTransferEvent(ctx context.Context, event events.TransferEvent) error {
-	return u.repo.InsertTransferEvent(ctx, event)
-}
-
-func (u *statsUseCase) SaveWithdrawEvent(ctx context.Context, event events.WithdrawEvent) error {
-	return u.repo.InsertWithdrawEvent(ctx, event)
-}
-
-func (u *statsUseCase) SaveSaldoEvent(ctx context.Context, event events.SaldoEvent) error {
-	return u.repo.InsertSaldoEvent(ctx, event)
-}
-
-func (u *statsUseCase) SaveMerchantEvent(ctx context.Context, event events.MerchantEvent) error {
-	return u.repo.InsertMerchantEvent(ctx, event)
-}
-
-func (u *statsUseCase) SaveCardEvent(ctx context.Context, event events.CardEvent) error {
-	return u.repo.InsertCardEvent(ctx, event)
 }
 
 func (u *statsUseCase) Close() error {

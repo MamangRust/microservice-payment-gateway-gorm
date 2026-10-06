@@ -8,7 +8,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card/stats"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/card"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/card/handler"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
@@ -85,7 +85,7 @@ func (s *CardGapiTestSuite) SetupSuite() {
 	}
 
 	repos := repository.NewRepositories(gormDB, nil)
-	userRepo := user_repo.NewRepositories(gormDB)
+	userRepo := user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient})
 
 	logger.ResetInstance()
 	lp := sdklog.NewLoggerProvider()
@@ -130,7 +130,7 @@ func (s *CardGapiTestSuite) SetupSuite() {
 	s.transferClient = pbStats.NewCardStatsTransferServiceClient(conn)
 	s.withdrawClient = pbStats.NewCardStatsWithdrawServiceClient(conn)
 
-	user, err := userRepo.UserCommand().CreateUser(context.Background(), &requests.CreateUserRequest{
+	user, err := userRepo.UserCommand.CreateUser(context.Background(), &requests.CreateUserRequest{
 		FirstName: "Gapi",
 		LastName:  "Card",
 		Email:     "gapi.card@example.com",

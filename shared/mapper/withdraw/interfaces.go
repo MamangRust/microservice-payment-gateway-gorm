@@ -2,7 +2,7 @@ package withdrawapimapper
 
 import (
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/withdraw"
-	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/withdraw/stats"
+	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/withdraw"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/response"
 )
 

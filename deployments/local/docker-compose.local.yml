@@ -1,61 +1,20 @@
 # Local-dev override for running the Go services on the host while keeping
 # all infrastructure in docker.
 #
+# Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d \
-#     auth-db user-db role-db card-db merchant-db saldo-db topup-db \
-#     transaction-db transfer-db withdraw-db redis-local clickhouse kafka-1 \
+#     postgres_identity pgbouncer_identity postgres_payment pgbouncer_payment \
+#     postgres_financial pgbouncer_financial \
+#     redis-local clickhouse kafka-1 \
 #     otel-collector jaeger prometheus grafana loki alertmanager \
 #     --profile monitoring
 #
 # Notes:
-# - Each postgres DB gets a FIXED host port (5433-5442) so host-run services
-#   can connect directly (no pgbouncer needed locally).
-# - redis-local is a single-node redis on host port 6379. Host services point
-#   REDIS_ADDRS at it (one address => UniversalClient uses the simple client,
-#   avoiding the cluster-mode DNS issues of the 6-node compose cluster).
-# - The docker-compose.override.yml stays out of this flow: run with
-#   `-f docker-compose.yml -f docker-compose.local.yml` explicitly.
+# - Tiga bounded context PostgreSQL (identity/payment/financial) masing-masing
+#   di depan PgBouncer; base compose memetakan port host 6432/6433/6434, jadi
+#   host-run services connect lewat .env (DB_<CONTEXT>_HOST=localhost).
+# - redis-local is a single-node redis on host port 6379.
 services:
-  auth-db:
-    ports:
-      - "5433:5432"
-
-  user-db:
-    ports:
-      - "5434:5432"
-
-  role-db:
-    ports:
-      - "5435:5432"
-
-  card-db:
-    ports:
-      - "5436:5432"
-
-  merchant-db:
-    ports:
-      - "5437:5432"
-
-  saldo-db:
-    ports:
-      - "5438:5432"
-
-  topup-db:
-    ports:
-      - "5439:5432"
-
-  transaction-db:
-    ports:
-      - "5440:5432"
-
-  transfer-db:
-    ports:
-      - "5441:5432"
-
-  withdraw-db:
-    ports:
-      - "5442:5432"
-
   # Host-run clients connect via localhost:9092. The base compose advertises
   # PLAINTEXT://kafka-1:9092 (docker-internal hostname), which host processes
   # cannot resolve after the first metadata fetch (sarama reconnects to the

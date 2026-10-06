@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb.stats.card;
+
+option go_package = 'github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/card';
+
+import "card/card.proto";
+
+service CardStatsWithdrawService {
+  rpc FindMonthlyWithdrawAmount(pb.card.FindYearAmount)
+      returns (pb.card.ApiResponseMonthlyAmount) {}
+  rpc FindYearlyWithdrawAmount(pb.card.FindYearAmount)
+      returns (pb.card.ApiResponseYearlyAmount) {}
+
+  rpc FindMonthlyWithdrawAmountByCardNumber(pb.card.FindYearAmountCardNumber)
+      returns (pb.card.ApiResponseMonthlyAmount) {}
+  rpc FindYearlyWithdrawAmountByCardNumber(pb.card.FindYearAmountCardNumber)
+      returns (pb.card.ApiResponseYearlyAmount) {}
+}

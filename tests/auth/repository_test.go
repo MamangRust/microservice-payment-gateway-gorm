@@ -33,13 +33,13 @@ func (s *AuthRepositoryTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.db = gormDB
 
-	s.repo = repository.NewRepositories(&repository.RepositoriesDeps{
-		DB:                gormDB,
-		UserQueryClient:   s.ts.UserClient,
-		UserCommandClient: s.ts.UserClient,
-		RoleQueryClient:   s.ts.RoleClient,
-		RoleCommandClient: s.ts.RoleClient,
-	})
+	s.repo = repository.NewRepositories(
+		gormDB,
+		s.ts.UserClient,
+		s.ts.UserClient,
+		s.ts.RoleClient,
+		s.ts.UserRoleClient,
+	)
 	s.email = "auth.repo.test@example.com"
 }
 

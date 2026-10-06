@@ -45,11 +45,11 @@ func (s *SaldoServiceTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.redisClient = redis.NewClient(opts)
 
-	userRepos := user_repo.NewRepositories(gormDB)
+	userRepos := user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient})
 	cardRepos := card_repo.NewRepositories(gormDB, nil)
-	saldoRepos := saldo_repo.NewRepositories(gormDB, nil)
+	saldoRepos := saldo_repo.NewRepositories(gormDB, nil, nil)
 
-	s.userRepo = userRepos.UserCommand()
+	s.userRepo = userRepos.UserCommand
 	s.cardRepo = cardRepos.CardCommand
 
 	logger.ResetInstance()
@@ -103,6 +103,8 @@ func (s *SaldoServiceTestSuite) TestBulkOperations() {
 }
 
 func TestSaldoServiceSuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(SaldoServiceTestSuite))
 }

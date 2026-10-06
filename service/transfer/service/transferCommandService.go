@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/email"
@@ -43,9 +42,9 @@ type transferCommandDeps struct {
 	IdempotencyStore          idempotency.Store
 	OutboxStore               repository.OutboxRepository
 
-	Logger           logger.LoggerInterface
-	Observability    observability.TraceLoggerObservability
-	AISecurityClient ai_security.AISecurityServiceClient
+	Logger            logger.LoggerInterface
+	Observability     observability.TraceLoggerObservability
+	AISecurityAdapter adapter.AISecurityAdapter
 }
 
 type transferCommandService struct {
@@ -60,9 +59,9 @@ type transferCommandService struct {
 	idempotencyStore          idempotency.Store
 	outboxStore               repository.OutboxRepository
 
-	logger           logger.LoggerInterface
-	observability    observability.TraceLoggerObservability
-	aiSecurityClient ai_security.AISecurityServiceClient
+	logger            logger.LoggerInterface
+	observability     observability.TraceLoggerObservability
+	aiSecurityAdapter adapter.AISecurityAdapter
 }
 
 func NewTransferCommandService(
@@ -79,7 +78,7 @@ func NewTransferCommandService(
 		outboxStore:               params.OutboxStore,
 		logger:                    params.Logger,
 		observability:             params.Observability,
-		aiSecurityClient:          params.AISecurityClient,
+		aiSecurityAdapter:         params.AISecurityAdapter,
 	}
 }
 
@@ -165,16 +164,16 @@ func (s *transferCommandService) CreateTransaction(ctx context.Context, request 
 	}
 
 	// AI Security Check
-	if s.aiSecurityClient != nil {
-		secRes, err := s.aiSecurityClient.VerifySecurity(ctx, &ai_security.SecurityRequest{
-			Domain:   ai_security.SecurityDomain_TRANSFER,
-			EntityId: request.TransferFrom,
+	if s.aiSecurityAdapter != nil {
+		secRes, err := s.aiSecurityAdapter.VerifySecurity(ctx, &adapter.SecurityCheckRequest{
+			Domain:   adapter.SecurityDomainTransfer,
+			EntityID: request.TransferFrom,
 			Amount:   float64(request.TransferAmount),
 			Metadata: map[string]string{
 				"recipient_card": request.TransferTo,
 			},
 		})
-		if err == nil && !secRes.IsSafe {
+		if err == nil && secRes != nil && !secRes.IsSafe {
 			status = "error"
 			s.logger.Warn("Transfer blocked by AI Security", zap.String("reason", secRes.Reason))
 			return nil, errors.New("security block: " + secRes.Reason)
@@ -527,13 +526,13 @@ func (s *transferCommandService) enqueueTransferEvents(ctx context.Context, tran
 	}
 
 	statsEvent := events.TransferEvent{
-		TransferID:    uint64(updatedTransfer.TransferID),
-		TransferNo:    updatedTransfer.TransferNo,
-		SourceCard:    request.TransferFrom,
+		TransferID:      uint64(updatedTransfer.TransferID),
+		TransferNo:      updatedTransfer.TransferNo,
+		SourceCard:      request.TransferFrom,
 		DestinationCard: request.TransferTo,
-		Amount:        int64(request.TransferAmount),
-		Status:        "success",
-		CreatedAt:     time.Now(),
+		Amount:          int64(request.TransferAmount),
+		Status:          "success",
+		CreatedAt:       time.Now(),
 	}
 	statsBytes, _ := json.Marshal(statsEvent)
 	if iErr := s.outboxStore.Insert(ctx, repository.OutboxRecord{AggregateType: "transfer", AggregateID: tID, EventType: "transfer.stats", Payload: statsBytes}); iErr != nil {
@@ -562,4 +561,3 @@ func (s *transferCommandService) markTransferAsFailed(ctx context.Context, trans
 		}
 	})
 }
-

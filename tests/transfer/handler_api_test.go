@@ -13,7 +13,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer/stats"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transfer"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	api "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/handler/transfer"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
@@ -78,8 +78,8 @@ func (s *TransferHandlerApiTestSuite) SetupSuite() {
 		) ENGINE = MergeTree() ORDER BY (source_card, created_at)`)
 
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
-	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.cardRepo = *card_repo.NewRepositories(gormDB, s.ts.UserClient)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, s.ts.CardClient, s.ts.CardClient)
 
 	opts, err := redis.ParseURL(s.ts.RedisURL)
 	s.Require().NoError(err)
@@ -92,9 +92,7 @@ func (s *TransferHandlerApiTestSuite) SetupSuite() {
 	cacheMetrics, _ := observability.NewCacheMetrics("test")
 	cacheStore := cache.NewCacheStore(s.redisClient, log, cacheMetrics)
 
-	saldoAdapter := &transferSaldoRepoAdapter{saldoRepo: s.saldoRepo}
-	cardAdapter := &transferCardRepoAdapter{cardRepo: s.cardRepo}
-	transferRepos := repository.NewRepositories(gormDB, saldoAdapter, cardAdapter)
+	transferRepos := repository.NewRepositories(gormDB, s.ts.SaldoClient, s.ts.SaldoClient, s.ts.CardClient, s.ts.CardClient)
 	transferService := service.NewService(&service.Deps{
 		Kafka: nil, Repositories: transferRepos, SaldoAdapter: s.ts.SaldoAdapter,
 		CardAdapter: s.ts.CardAdapter, Logger: log, Cache: cacheStore,

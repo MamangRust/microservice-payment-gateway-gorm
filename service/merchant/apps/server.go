@@ -44,7 +44,13 @@ func NewServer(cfg *server.Config) (*server.GRPCServer, error) {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
 
-	repos := repository.NewRepositories(srv.GormDB, userQueryClient)
+	repos := repository.NewRepositories(srv.GormDB, user.NewUserQueryServiceClient(userConn),
+		repository.GuardOptions{
+			User: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("user", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+		},
+	)
 	svc := service.NewService(&service.Deps{
 		Cache:        srv.CacheStore,
 		Logger:       srv.Logger,

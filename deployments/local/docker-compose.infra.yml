@@ -11,176 +11,149 @@
 name: e2e-infra
 
 services:
-  # ─── PostgreSQL databases (one per service) ───────────────────────────
-  auth-db:
+  # ─── PostgreSQL: 1 database = 1 bounded context, masing-masing di depan
+  # PgBouncer. Service Go di host connect lewat port host PgBouncer
+  # (6432/6433/6434) memakai .env (DB_<CONTEXT>_HOST=localhost). ─────────────
+  postgres_identity:
     image: postgres:17-alpine
-    restart: always
+    container_name: e2e-postgres-identity
     environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: auth_db
-    ports:
-      - "5433:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_identity
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_identity_data:/var/lib/postgresql/data
     networks:
       - e2e
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d auth_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pg_identity"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  user-db:
-    image: postgres:17-alpine
-    restart: always
+  pgbouncer_identity:
+    image: edoburu/pgbouncer:latest
+    container_name: e2e-pgbouncer-identity
     environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: user_db
+      DB_HOST: postgres_identity
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: pg_identity
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MAX_PREPARED_STATEMENTS: "100"
     ports:
-      - "5434:5432"
+      - "6432:5432"
     networks:
       - e2e
+    depends_on:
+      postgres_identity:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d user_db"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d pg_identity"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  role-db:
+  postgres_payment:
     image: postgres:17-alpine
-    restart: always
+    container_name: e2e-postgres-payment
     environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: role_db
-    ports:
-      - "5435:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_payment
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
     networks:
       - e2e
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d role_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pg_payment"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  card-db:
-    image: postgres:17-alpine
-    restart: always
+  pgbouncer_payment:
+    image: edoburu/pgbouncer:latest
+    container_name: e2e-pgbouncer-payment
     environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: card_db
+      DB_HOST: postgres_payment
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: pg_payment
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MAX_PREPARED_STATEMENTS: "100"
     ports:
-      - "5436:5432"
+      - "6433:5432"
     networks:
       - e2e
+    depends_on:
+      postgres_payment:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d card_db"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d pg_payment"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  merchant-db:
+  postgres_financial:
     image: postgres:17-alpine
-    restart: always
+    container_name: e2e-postgres-financial
     environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: merchant_db
-    ports:
-      - "5437:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pg_financial
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_financial_data:/var/lib/postgresql/data
     networks:
       - e2e
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d merchant_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pg_financial"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  saldo-db:
-    image: postgres:17-alpine
-    restart: always
+  pgbouncer_financial:
+    image: edoburu/pgbouncer:latest
+    container_name: e2e-pgbouncer-financial
     environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: saldo_db
+      DB_HOST: postgres_financial
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: pg_financial
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MAX_PREPARED_STATEMENTS: "100"
     ports:
-      - "5438:5432"
+      - "6434:5432"
     networks:
       - e2e
+    depends_on:
+      postgres_financial:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d saldo_db"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d pg_financial"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-  topup-db:
-    image: postgres:17-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: topup_db
-    ports:
-      - "5439:5432"
-    networks:
-      - e2e
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d topup_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  transaction-db:
-    image: postgres:17-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: transaction_db
-    ports:
-      - "5440:5432"
-    networks:
-      - e2e
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d transaction_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  transfer-db:
-    image: postgres:17-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: transfer_db
-    ports:
-      - "5441:5432"
-    networks:
-      - e2e
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d transfer_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  withdraw-db:
-    image: postgres:17-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: DRAGON
-      POSTGRES_PASSWORD: DRAGON
-      POSTGRES_DB: withdraw_db
-    ports:
-      - "5442:5432"
-    networks:
-      - e2e
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DRAGON -d withdraw_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      start_period: 10s
 
   # ─── Redis (single node for local dev) ────────────────────────────────
   redis:
@@ -199,7 +172,7 @@ services:
 
   # ─── Kafka (single-node KRaft) ────────────────────────────────────────
   kafka:
-    image: apache/kafka:latest
+    image: apache/kafka:4.3.1
     container_name: e2e-kafka
     ports:
       - "9092:9092"
@@ -207,11 +180,13 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      # advertised to localhost so host-run Go services can reconnect
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_CLUSTER_ID: kraft-e2e-01
+      # CLUSTER_ID (bukan KAFKA_CLUSTER_ID) adalah key yang dibaca
+      # /etc/kafka/docker/configure; nilai lama diabaikan dan image jatuh ke
+      # default bawaannya.
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 10
       KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
@@ -229,7 +204,7 @@ services:
 
   # ─── ClickHouse (analytics / stats) ───────────────────────────────────
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:24.8-alpine
     container_name: e2e-clickhouse
     ports:
       - "8123:8123"
@@ -306,6 +281,9 @@ services:
       - monitoring
 
 volumes:
+  postgres_identity_data:
+  postgres_payment_data:
+  postgres_financial_data:
   clickhouse_data:
 
 networks:

@@ -39,13 +39,13 @@ func (s *AuthServiceTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.redisClient = redis.NewClient(opts)
 
-	repos := repository.NewRepositories(&repository.RepositoriesDeps{
-		DB:                gormDB,
-		UserQueryClient:   s.ts.UserClient,
-		UserCommandClient: s.ts.UserClient,
-		RoleQueryClient:   s.ts.RoleClient,
-		RoleCommandClient: s.ts.RoleClient,
-	})
+	repos := repository.NewRepositories(
+		gormDB,
+		s.ts.UserClient,
+		s.ts.UserClient,
+		s.ts.RoleClient,
+		s.ts.UserRoleClient,
+	)
 
 	s.service = service.NewService(&service.Deps{
 		Repositories: repos,

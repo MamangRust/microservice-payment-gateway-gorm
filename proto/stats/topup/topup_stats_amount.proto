@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option go_package = 'github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/topup';
+
+package pb.stats.topup;
+
+import "topup/topup.proto";
+
+message TopupMonthAmountResponse {
+  string month = 1;
+  int64 total_amount = 2;
+}
+
+message TopupYearlyAmountResponse {
+  string year = 1;
+  int64 total_amount = 2;
+}
+
+message ApiResponseTopupMonthAmount {
+  string status = 1;
+  string message = 2;
+  repeated TopupMonthAmountResponse data = 3;
+}
+
+message ApiResponseTopupYearAmount {
+  string status = 1;
+  string message = 2;
+  repeated TopupYearlyAmountResponse data = 3;
+}
+
+service TopupStatsAmountService {
+  rpc FindMonthlyTopupAmounts(pb.topup.FindYearTopupStatus)
+      returns (ApiResponseTopupMonthAmount) {}
+  rpc FindYearlyTopupAmounts(pb.topup.FindYearTopupStatus)
+      returns (ApiResponseTopupYearAmount) {}
+  rpc FindMonthlyTopupAmountsByCardNumber(pb.topup.FindYearTopupCardNumber)
+      returns (ApiResponseTopupMonthAmount) {}
+  rpc FindYearlyTopupAmountsByCardNumber(pb.topup.FindYearTopupCardNumber)
+      returns (ApiResponseTopupYearAmount) {}
+}

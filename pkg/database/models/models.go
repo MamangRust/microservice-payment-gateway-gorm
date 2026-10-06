@@ -175,6 +175,13 @@ type Saldo struct {
 
 func (Saldo) TableName() string { return "saldos" }
 
+// SaldoMutationResult is the response type for debit/credit/adjustment results.
+type SaldoMutationResult struct {
+	SaldoID      int32
+	CardNumber   string
+	TotalBalance int64
+}
+
 type BalanceLedger struct {
 	EntryID       int64      `gorm:"column:entry_id;primaryKey" json:"entry_id"`
 	OperationID   string     `gorm:"column:operation_id" json:"operation_id"`

@@ -17,6 +17,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/role"
+	pbuserrole "github.com/MamangRust/microservice-payment-gateway-grpc/pb/user_role"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/user"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/auth"
@@ -32,6 +33,12 @@ import (
 	user_handler "github.com/MamangRust/microservice-payment-gateway-grpc/service/user/handler"
 	user_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/user/repository"
 	user_service "github.com/MamangRust/microservice-payment-gateway-grpc/service/user/service"
+	card_handler "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/handler"
+	card_service "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/service"
+	saldo_handler "github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/handler"
+	saldo_service "github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/service"
+	merchant_handler "github.com/MamangRust/microservice-payment-gateway-grpc/service/merchant/handler"
+	merchant_service "github.com/MamangRust/microservice-payment-gateway-grpc/service/merchant/service"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/cache"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/observability"
 	goredis "github.com/redis/go-redis/v9"
@@ -63,10 +70,14 @@ type TestSuite struct {
 	UserCommandClient user.UserCommandServiceClient
 	RoleQueryClient   role.RoleQueryServiceClient
 	RoleCommandClient role.RoleCommandServiceClient
+	UserRoleClient    pbuserrole.UserRoleServiceClient
 
 	// Aliases for convenience
-	UserClient *LocalUserClient
-	RoleClient *LocalRoleClient
+	UserClient     *LocalUserClient
+	RoleClient     *LocalRoleClient
+	CardClient     *LocalCardClient
+	SaldoClient    *LocalSaldoClient
+	MerchantClient *LocalMerchantClient
 
 	// Shared resources
 	Logger        logger.LoggerInterface
@@ -163,38 +174,11 @@ func SetupTestSuite() (*TestSuite, error) {
 		return nil, fmt.Errorf("failed to open gorm connection: %w", err)
 	}
 
-	// Initialize Local gRPC Clients for Auth testing
+	// Auth helpers + Logging, Cache and Observability are initialized first so
+	// every service/handler below is built with logger/cache available.
 	ts.Hashing = hash.NewHashingPassword()
 	ts.TokenManager, _ = auth.NewManager("test-secret-key")
 
-	// Setup repositories with GORM
-	userRepos := user_repo.NewRepositories(gormDB)
-	userService := user_service.NewService(&user_service.Deps{
-		Repositories: userRepos,
-		Hash:         ts.Hashing,
-		Logger:       ts.Logger,
-		Cache:        ts.CacheStore,
-	})
-	userHandler := user_handler.NewHandler(userService)
-	uClient := &LocalUserClient{Handler: userHandler}
-	ts.UserQueryClient = uClient
-	ts.UserCommandClient = uClient
-
-	roleRepos := role_repo.NewRepositories(gormDB)
-	roleService := role_service.NewService(&role_service.Deps{
-		Repositories: roleRepos,
-		Logger:       ts.Logger,
-		Cache:        ts.CacheStore,
-	})
-	roleHandler := role_handler.NewHandler(roleService)
-	rClient := &LocalRoleClient{Handler: roleHandler}
-	ts.RoleQueryClient = rClient
-	ts.RoleCommandClient = rClient
-
-	ts.UserClient = uClient
-	ts.RoleClient = rClient
-
-	// Initialize Logging, Cache and Observability
 	logger.ResetInstance()
 	lp := sdklog.NewLoggerProvider()
 	ts.Logger, _ = logger.NewLogger("test-integration", lp)
@@ -208,42 +192,88 @@ func SetupTestSuite() (*TestSuite, error) {
 	ts.CacheStore = cache.NewCacheStore(redisClient, ts.Logger, cacheMetrics)
 	ts.Observability, _ = observability.NewObservability("test-integration", ts.Logger)
 
-	// Initialize adapters (for cross-service tests)
-	ts.UserAdapter = adapter.NewLocalUserAdapter(userRepos.UserQuery())
+	// Role handler is built first: the user repository now requires gRPC clients
+	// for its role/user-role repos, which the local role client satisfies.
+	roleRepos := role_repo.NewRepositories(gormDB)
+	roleService := role_service.NewService(&role_service.Deps{
+		Repositories: roleRepos,
+		Logger:       ts.Logger,
+		Cache:        ts.CacheStore,
+	})
+	roleHandler := role_handler.NewHandler(roleService)
+	rClient := &LocalRoleClient{Handler: roleHandler}
+	ts.RoleQueryClient = rClient
+	ts.RoleCommandClient = rClient
+	ts.RoleClient = rClient
 
-	cardRepos := card_repo.NewRepositories(gormDB, nil)
-	ts.CardAdapter = adapter.NewLocalCardAdapter(cardRepos.CardQuery, cardRepos.CardCommand)
-
-	saldoRepos := saldo_repo.NewRepositories(gormDB, nil)
-	ts.SaldoAdapter = adapter.NewLocalSaldoAdapter(saldoRepos)
-
-	merchantRepos := merchant_repo.NewRepositories(gormDB, nil)
-	ts.MerchantAdapter = adapter.NewLocalMerchantAdapter(merchantRepos)
-
-	// Re-initialize services with cache now available
-	userService = user_service.NewService(&user_service.Deps{
+	// User
+	userRepos := user_repo.NewRepositories(&user_repo.Deps{
+		Db:              gormDB,
+		RoleQueryClient: rClient,
+		UserRoleClient:  rClient,
+		Guard:           user_repo.GuardOptions{},
+	})
+	userService := user_service.NewService(&user_service.Deps{
 		Repositories: userRepos,
 		Hash:         ts.Hashing,
 		Logger:       ts.Logger,
 		Cache:        ts.CacheStore,
 	})
-	userHandler = user_handler.NewHandler(userService)
-	uClient = &LocalUserClient{Handler: userHandler}
+	userHandler := user_handler.NewHandler(userService)
+	uClient := &LocalUserClient{Handler: userHandler}
 	ts.UserQueryClient = uClient
 	ts.UserCommandClient = uClient
+	ts.UserClient = uClient
 
-	roleService = role_service.NewService(&role_service.Deps{
-		Repositories: roleRepos,
+	// Real cross-service adapters, each backed by a local gRPC client.
+	ts.UserAdapter = adapter.NewUserAdapter(uClient)
+
+	// Card (needs the user adapter)
+	cardRepos := card_repo.NewRepositories(gormDB, uClient)
+	cardService := card_service.NewService(&card_service.Deps{
+		Cache:           ts.CacheStore,
+		Repositories:    cardRepos,
+		UserAdapter:     ts.UserAdapter,
+		Logger:          ts.Logger,
+		Kafka:           nil,
+		BillingCycleDay: 1,
+	})
+	cardHandler := card_handler.NewHandler(cardService)
+	cardClient := &LocalCardClient{Handler: cardHandler}
+	ts.CardAdapter = adapter.NewCardAdapter(cardClient, cardClient)
+
+	// Saldo (needs the card adapter)
+	saldoRepos := saldo_repo.NewRepositories(gormDB, cardClient, cardClient)
+	saldoService := saldo_service.NewService(&saldo_service.Deps{
+		Repositories: saldoRepos,
+		CardAdapter:  ts.CardAdapter,
+		Logger:       ts.Logger,
+		Cache:        ts.CacheStore,
+		Kafka:        nil,
+	})
+	saldoHandler := saldo_handler.NewHandler(saldoService)
+	saldoClient := &LocalSaldoClient{Handler: saldoHandler}
+	ts.SaldoAdapter = adapter.NewSaldoAdapter(saldoClient, saldoClient)
+
+	// Merchant (needs the user adapter)
+	merchantRepos := merchant_repo.NewRepositories(gormDB, uClient)
+	merchantService := merchant_service.NewService(&merchant_service.Deps{
+		Kafka:        nil,
+		Repositories: merchantRepos,
+		UserAdapter:  ts.UserAdapter,
 		Logger:       ts.Logger,
 		Cache:        ts.CacheStore,
 	})
-	roleHandler = role_handler.NewHandler(roleService)
-	rClient = &LocalRoleClient{Handler: roleHandler}
-	ts.RoleQueryClient = rClient
-	ts.RoleCommandClient = rClient
+	merchantHandler := merchant_handler.NewHandler(merchantService)
+	merchantClient := &LocalMerchantClient{Handler: merchantHandler}
+	ts.MerchantAdapter = adapter.NewMerchantAdapter(merchantClient)
 
-	ts.UserClient = uClient
-	ts.RoleClient = rClient
+	// Expose local gRPC clients so per-package tests can build repositories
+	// that now require cross-service gRPC clients.
+	ts.UserRoleClient = rClient
+	ts.CardClient = cardClient
+	ts.SaldoClient = saldoClient
+	ts.MerchantClient = merchantClient
 
 	return ts, nil
 }

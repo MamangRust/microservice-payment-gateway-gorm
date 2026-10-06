@@ -23,6 +23,7 @@ const (
 	TransactionQueryService_FindAllTransactionByCardNumber_FullMethodName = "/pb.transaction.TransactionQueryService/FindAllTransactionByCardNumber"
 	TransactionQueryService_FindByIdTransaction_FullMethodName            = "/pb.transaction.TransactionQueryService/FindByIdTransaction"
 	TransactionQueryService_FindTransactionByMerchantId_FullMethodName    = "/pb.transaction.TransactionQueryService/FindTransactionByMerchantId"
+	TransactionQueryService_FindAllTransactionByMerchantId_FullMethodName = "/pb.transaction.TransactionQueryService/FindAllTransactionByMerchantId"
 	TransactionQueryService_FindByActiveTransaction_FullMethodName        = "/pb.transaction.TransactionQueryService/FindByActiveTransaction"
 	TransactionQueryService_FindByTrashedTransaction_FullMethodName       = "/pb.transaction.TransactionQueryService/FindByTrashedTransaction"
 )
@@ -35,6 +36,7 @@ type TransactionQueryServiceClient interface {
 	FindAllTransactionByCardNumber(ctx context.Context, in *FindAllTransactionCardNumberRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransaction, error)
 	FindByIdTransaction(ctx context.Context, in *FindByIdTransactionRequest, opts ...grpc.CallOption) (*ApiResponseTransaction, error)
 	FindTransactionByMerchantId(ctx context.Context, in *FindTransactionByMerchantIdRequest, opts ...grpc.CallOption) (*ApiResponseTransactions, error)
+	FindAllTransactionByMerchantId(ctx context.Context, in *FindAllTransactionByMerchantIdRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransaction, error)
 	FindByActiveTransaction(ctx context.Context, in *FindAllTransactionRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransactionDeleteAt, error)
 	FindByTrashedTransaction(ctx context.Context, in *FindAllTransactionRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransactionDeleteAt, error)
 }
@@ -87,6 +89,16 @@ func (c *transactionQueryServiceClient) FindTransactionByMerchantId(ctx context.
 	return out, nil
 }
 
+func (c *transactionQueryServiceClient) FindAllTransactionByMerchantId(ctx context.Context, in *FindAllTransactionByMerchantIdRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransaction, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponsePaginationTransaction)
+	err := c.cc.Invoke(ctx, TransactionQueryService_FindAllTransactionByMerchantId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *transactionQueryServiceClient) FindByActiveTransaction(ctx context.Context, in *FindAllTransactionRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransactionDeleteAt, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponsePaginationTransactionDeleteAt)
@@ -115,6 +127,7 @@ type TransactionQueryServiceServer interface {
 	FindAllTransactionByCardNumber(context.Context, *FindAllTransactionCardNumberRequest) (*ApiResponsePaginationTransaction, error)
 	FindByIdTransaction(context.Context, *FindByIdTransactionRequest) (*ApiResponseTransaction, error)
 	FindTransactionByMerchantId(context.Context, *FindTransactionByMerchantIdRequest) (*ApiResponseTransactions, error)
+	FindAllTransactionByMerchantId(context.Context, *FindAllTransactionByMerchantIdRequest) (*ApiResponsePaginationTransaction, error)
 	FindByActiveTransaction(context.Context, *FindAllTransactionRequest) (*ApiResponsePaginationTransactionDeleteAt, error)
 	FindByTrashedTransaction(context.Context, *FindAllTransactionRequest) (*ApiResponsePaginationTransactionDeleteAt, error)
 	mustEmbedUnimplementedTransactionQueryServiceServer()
@@ -138,6 +151,9 @@ func (UnimplementedTransactionQueryServiceServer) FindByIdTransaction(context.Co
 }
 func (UnimplementedTransactionQueryServiceServer) FindTransactionByMerchantId(context.Context, *FindTransactionByMerchantIdRequest) (*ApiResponseTransactions, error) {
 	return nil, status.Error(codes.Unimplemented, "method FindTransactionByMerchantId not implemented")
+}
+func (UnimplementedTransactionQueryServiceServer) FindAllTransactionByMerchantId(context.Context, *FindAllTransactionByMerchantIdRequest) (*ApiResponsePaginationTransaction, error) {
+	return nil, status.Error(codes.Unimplemented, "method FindAllTransactionByMerchantId not implemented")
 }
 func (UnimplementedTransactionQueryServiceServer) FindByActiveTransaction(context.Context, *FindAllTransactionRequest) (*ApiResponsePaginationTransactionDeleteAt, error) {
 	return nil, status.Error(codes.Unimplemented, "method FindByActiveTransaction not implemented")
@@ -239,6 +255,24 @@ func _TransactionQueryService_FindTransactionByMerchantId_Handler(srv interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TransactionQueryService_FindAllTransactionByMerchantId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindAllTransactionByMerchantIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransactionQueryServiceServer).FindAllTransactionByMerchantId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransactionQueryService_FindAllTransactionByMerchantId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransactionQueryServiceServer).FindAllTransactionByMerchantId(ctx, req.(*FindAllTransactionByMerchantIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TransactionQueryService_FindByActiveTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FindAllTransactionRequest)
 	if err := dec(in); err != nil {
@@ -297,6 +331,10 @@ var TransactionQueryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindTransactionByMerchantId",
 			Handler:    _TransactionQueryService_FindTransactionByMerchantId_Handler,
+		},
+		{
+			MethodName: "FindAllTransactionByMerchantId",
+			Handler:    _TransactionQueryService_FindAllTransactionByMerchantId_Handler,
 		},
 		{
 			MethodName: "FindByActiveTransaction",

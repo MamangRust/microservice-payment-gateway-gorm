@@ -13,7 +13,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/topup"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/topup/stats"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/topup"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	api "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/handler/topup"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
@@ -83,15 +83,17 @@ func (s *TopupHandlerTestSuite) SetupSuite() {
 			created_at DateTime DEFAULT now()
 		) ENGINE = MergeTree() ORDER BY (card_number, created_at)`)
 
-	userRepos := user_repo.NewRepositories(gormDB)
-	cardRepos := card_repo.NewRepositories(gormDB, nil)
-	saldoRepos := saldo_repo.NewRepositories(gormDB, nil)
+	userRepos := user_repo.NewRepositories(&user_repo.Deps{
+		Db:              gormDB,
+		RoleQueryClient: s.ts.RoleClient,
+		UserRoleClient:  s.ts.UserRoleClient,
+		Guard:           user_repo.GuardOptions{},
+	})
+	cardRepos := card_repo.NewRepositories(gormDB, s.ts.UserClient)
+	saldoRepos := saldo_repo.NewRepositories(gormDB, s.ts.CardClient, s.ts.CardClient)
 
-	cardAdapter := &topupCardRepoAdapter{
-		CardQueryRepository: cardRepos.CardQuery, CardCommandRepository: cardRepos.CardCommand,
-	}
-	s.topupRepo = topup_repo.NewRepositories(gormDB, cardAdapter, saldoRepos)
-	s.userRepo = userRepos.UserCommand()
+	s.topupRepo = topup_repo.NewRepositories(gormDB, s.ts.CardClient, s.ts.CardClient, s.ts.SaldoClient, s.ts.SaldoClient)
+	s.userRepo = userRepos.UserCommand
 	s.cardRepo = cardRepos.CardCommand
 	s.saldoRepo = saldoRepos
 

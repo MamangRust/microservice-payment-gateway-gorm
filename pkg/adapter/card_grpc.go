@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	pbcard "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/resilience"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -26,11 +25,11 @@ type cardGRPCAdapter struct {
 	guard         *resilience.DependencyGuard
 }
 
-func (a *cardGRPCAdapter) setGuard(g *resilience.DependencyGuard) {
+func (a *cardGRPCAdapter) SetGuard(g *resilience.DependencyGuard) {
 	a.guard = g
 }
 
-func NewCardAdapter(queryClient pbcard.CardQueryServiceClient, commandClient pbcard.CardCommandServiceClient, opts ...func(guardSetter)) CardAdapter {
+func NewCardAdapter(queryClient pbcard.CardQueryServiceClient, commandClient pbcard.CardCommandServiceClient, opts ...GuardOption) CardAdapter {
 	a := &cardGRPCAdapter{
 		QueryClient:   queryClient,
 		CommandClient: commandClient,
@@ -65,7 +64,7 @@ func parseDate(ts string) time.Time {
 
 func (a *cardGRPCAdapter) FindCardByUserId(ctx context.Context, user_id int) (*models.Card, error) {
 	var resp *pbcard.ApiResponseCard
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.QueryClient.FindByUserIdCard(callCtx, &pbcard.FindByUserIdCardRequest{
 			UserId: int32(user_id),
@@ -91,7 +90,7 @@ func (a *cardGRPCAdapter) FindCardByUserId(ctx context.Context, user_id int) (*m
 
 func (a *cardGRPCAdapter) FindUserCardByCardNumber(ctx context.Context, card_number string) (*models.Card, error) {
 	var resp *pbcard.CardWithEmailResponse
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.QueryClient.FindUserCardByCardNumber(callCtx, &pbcard.FindByCardNumberRequest{
 			CardNumber: card_number,
@@ -121,7 +120,7 @@ func (a *cardGRPCAdapter) FindUserCardByCardNumber(ctx context.Context, card_num
 
 func (a *cardGRPCAdapter) FindCardByCardNumber(ctx context.Context, card_number string) (*models.Card, error) {
 	var resp *pbcard.ApiResponseCard
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.QueryClient.FindByCardNumber(callCtx, &pbcard.FindByCardNumberRequest{
 			CardNumber: card_number,
@@ -147,7 +146,7 @@ func (a *cardGRPCAdapter) FindCardByCardNumber(ctx context.Context, card_number 
 
 func (a *cardGRPCAdapter) UpdateCard(ctx context.Context, request *requests.UpdateCardRequest) (*models.Card, error) {
 	var resp *pbcard.ApiResponseCard
-	err := a.guard.Call(ctx, func(callCtx context.Context) error {
+	err := callGuarded(ctx, a.guard, func(callCtx context.Context) error {
 		var callErr error
 		resp, callErr = a.CommandClient.UpdateCard(callCtx, &pbcard.UpdateCardRequest{
 			CardId:       int32(request.CardID),
@@ -174,32 +173,4 @@ func (a *cardGRPCAdapter) UpdateCard(ctx context.Context, request *requests.Upda
 		CreatedAt:    parseTime(resp.Data.CreatedAt),
 		UpdatedAt:    parseTime(resp.Data.UpdatedAt),
 	}, nil
-}
-
-type localCardAdapter struct {
-	queryRepo   repository.CardQueryRepository
-	commandRepo repository.CardCommandRepository
-}
-
-func NewLocalCardAdapter(queryRepo repository.CardQueryRepository, commandRepo repository.CardCommandRepository) CardAdapter {
-	return &localCardAdapter{
-		queryRepo:   queryRepo,
-		commandRepo: commandRepo,
-	}
-}
-
-func (a *localCardAdapter) FindCardByUserId(ctx context.Context, user_id int) (*models.Card, error) {
-	return a.queryRepo.FindCardByUserId(ctx, user_id)
-}
-
-func (a *localCardAdapter) FindUserCardByCardNumber(ctx context.Context, card_number string) (*models.Card, error) {
-	return a.queryRepo.FindUserCardByCardNumber(ctx, card_number)
-}
-
-func (a *localCardAdapter) FindCardByCardNumber(ctx context.Context, card_number string) (*models.Card, error) {
-	return a.queryRepo.FindCardByCardNumber(ctx, card_number)
-}
-
-func (a *localCardAdapter) UpdateCard(ctx context.Context, request *requests.UpdateCardRequest) (*models.Card, error) {
-	return a.commandRepo.UpdateCard(ctx, request)
 }

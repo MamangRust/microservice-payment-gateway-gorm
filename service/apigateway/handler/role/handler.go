@@ -4,6 +4,7 @@ import (
 	"time"
 
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/role"
+	pbuserrole "github.com/MamangRust/microservice-payment-gateway-grpc/pb/user_role"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/kafka"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/middlewares"
@@ -56,13 +57,14 @@ func RegisterRoleHandler(deps *DepsRole) {
 func setupRoleQueryHandler(deps *DepsRole, mapper apimapper.RoleQueryResponseMapper, cache role_cache.RoleMencache, roleValidator *middlewares.RoleValidator) func() {
 	return func() {
 		NewRoleQueryHandleApi(&roleQueryHandleDeps{
-			client:        pb.NewRoleQueryServiceClient(deps.Client),
-			router:        deps.E,
-			logger:        deps.Logger,
-			mapper:        mapper,
-			roleValidator: roleValidator,
-			cache:         cache,
-			apiHandler:    deps.ApiHandler,
+			client:         pb.NewRoleQueryServiceClient(deps.Client),
+			userRoleClient: pbuserrole.NewUserRoleServiceClient(deps.Client),
+			router:         deps.E,
+			logger:         deps.Logger,
+			mapper:         mapper,
+			roleValidator:  roleValidator,
+			cache:          cache,
+			apiHandler:     deps.ApiHandler,
 		})
 	}
 }

@@ -17,9 +17,9 @@ else
   echo "pre-flight ports free"
 fi
 
-echo "===== [2/7] seeding base roles (role_db)"
+echo "===== [2/7] seeding base roles (pg_identity)"
 # Register assigns ROLE_ADMIN to new users, so the role must pre-exist.
-docker exec pg-local-role-db-1 psql -U DRAGON -d role_db -c "
+docker exec e2e-postgres-identity psql -U postgres -d pg_identity -c "
 INSERT INTO roles (role_name, created_at, updated_at) VALUES
   ('ROLE_ADMIN',now(),now()),('ROLE_USER',now(),now()),('ROLE_MERCHANT',now(),now()),
   ('ROLE_CUSTOMER',now(),now()),('ROLE_MODERATOR',now(),now()),('ROLE_SUPERVISOR',now(),now()),
@@ -34,7 +34,8 @@ docker exec redis-local redis-cli -a dragon_knight FLUSHALL 2>&1 | tail -1
 
 echo "===== [3/7] launching services"
 COMMON_GRPC="GRPC_AUTH_ADDR=localhost:50051 GRPC_ROLE_ADDR=localhost:50052 GRPC_CARD_ADDR=localhost:50053 GRPC_MERCHANT_ADDR=localhost:50054 GRPC_USER_ADDR=localhost:50055 GRPC_SALDO_ADDR=localhost:50056 GRPC_TOPUP_ADDR=localhost:50057 GRPC_TRANSACTION_ADDR=localhost:50058 GRPC_TRANSFER_ADDR=localhost:50059 GRPC_WITHDRAW_ADDR=localhost:50060 GRPC_AI_SECURITY_ADDR=localhost:50051"
-COMMON="APP_ENV=test DB_DRIVER=postgres DB_USERNAME=DRAGON DB_PASSWORD=DRAGON SECRET_KEY=yantopedia KAFKA_BROKERS=localhost:9092 REDIS_ADDRS=localhost:6379 REDIS_PASSWORD=dragon_knight REDIS_DB=0 $COMMON_GRPC"
+COMMON_DB="DB_DRIVER=postgres DB_USERNAME=postgres DB_PASSWORD=password DB_IDENTITY_HOST=localhost DB_IDENTITY_PORT=6432 DB_IDENTITY_NAME=pg_identity DB_PAYMENT_HOST=localhost DB_PAYMENT_PORT=6433 DB_PAYMENT_NAME=pg_payment DB_FINANCIAL_HOST=localhost DB_FINANCIAL_PORT=6434 DB_FINANCIAL_NAME=pg_financial"
+COMMON="APP_ENV=test $COMMON_DB SECRET_KEY=yantopedia KAFKA_BROKERS=localhost:9092 REDIS_ADDRS=localhost:6379 REDIS_PASSWORD=dragon_knight REDIS_DB=0 $COMMON_GRPC"
 
 launch() {
   local svc=$1; shift
@@ -45,16 +46,16 @@ launch() {
 }
 
 launch_all() {
-  launch auth     DB_HOST=localhost DB_PORT=5433 DB_NAME=auth_db
-  launch user     DB_HOST=localhost DB_PORT=5434 DB_NAME=user_db
-  launch role     DB_HOST=localhost DB_PORT=5435 DB_NAME=role_db
-  launch card     DB_HOST=localhost DB_PORT=5436 DB_NAME=card_db BILLING_CYCLE_DAY=1
-  launch merchant DB_HOST=localhost DB_PORT=5437 DB_NAME=merchant_db
-  launch saldo    DB_HOST=localhost DB_PORT=5438 DB_NAME=saldo_db
-  launch topup    DB_HOST=localhost DB_PORT=5439 DB_NAME=topup_db
-  launch transaction DB_HOST=localhost DB_PORT=5440 DB_NAME=transaction_db
-  launch transfer DB_HOST=localhost DB_PORT=5441 DB_NAME=transfer_db
-  launch withdraw DB_HOST=localhost DB_PORT=5442 DB_NAME=withdraw_db WITHDRAW_DAILY_LIMIT=10000000
+  launch auth
+  launch user
+  launch role
+  launch card     BILLING_CYCLE_DAY=1
+  launch merchant
+  launch saldo
+  launch topup
+  launch transaction
+  launch transfer
+  launch withdraw WITHDRAW_DAILY_LIMIT=10000000
 
   (cd service/stats-reader && env APP_ENV=test CLICKHOUSE_ADDR=localhost:9000 CLICKHOUSE_DATABASE=default CLICKHOUSE_USERNAME=dragon CLICKHOUSE_PASSWORD=dragon_knight /tmp/e2e-bin/stats-reader > /tmp/e2e-logs/stats-reader.log 2>&1 &)
   echo "  launched stats-reader"
@@ -110,16 +111,16 @@ for round in 1 2 3; do
       svc=$(svc_for_port "$port")
       echo "  restarting $svc (port $port missing)"
       case "$svc" in
-        auth)         launch auth         DB_HOST=localhost DB_PORT=5433 DB_NAME=auth_db;;
-        role)         launch role         DB_HOST=localhost DB_PORT=5435 DB_NAME=role_db;;
-        card)         launch card         DB_HOST=localhost DB_PORT=5436 DB_NAME=card_db BILLING_CYCLE_DAY=1;;
-        merchant)     launch merchant     DB_HOST=localhost DB_PORT=5437 DB_NAME=merchant_db;;
-        user)         launch user         DB_HOST=localhost DB_PORT=5434 DB_NAME=user_db;;
-        saldo)        launch saldo        DB_HOST=localhost DB_PORT=5438 DB_NAME=saldo_db;;
-        topup)        launch topup        DB_HOST=localhost DB_PORT=5439 DB_NAME=topup_db;;
-        transaction)  launch transaction  DB_HOST=localhost DB_PORT=5440 DB_NAME=transaction_db;;
-        transfer)     launch transfer     DB_HOST=localhost DB_PORT=5441 DB_NAME=transfer_db;;
-        withdraw)     launch withdraw     DB_HOST=localhost DB_PORT=5442 DB_NAME=withdraw_db WITHDRAW_DAILY_LIMIT=10000000;;
+        auth)         launch auth;;
+        role)         launch role;;
+        card)         launch card         BILLING_CYCLE_DAY=1;;
+        merchant)     launch merchant;;
+        user)         launch user;;
+        saldo)        launch saldo;;
+        topup)        launch topup;;
+        transaction)  launch transaction;;
+        transfer)     launch transfer;;
+        withdraw)     launch withdraw     WITHDRAW_DAILY_LIMIT=10000000;;
         stats-reader) (cd service/stats-reader && env APP_ENV=test CLICKHOUSE_ADDR=localhost:9000 CLICKHOUSE_DATABASE=default CLICKHOUSE_USERNAME=dragon CLICKHOUSE_PASSWORD=dragon_knight /tmp/e2e-bin/stats-reader > /tmp/e2e-logs/stats-reader.log 2>&1 &); echo "  launched stats-reader";;
       esac
     fi
@@ -130,7 +131,7 @@ echo "===== [4b/7] re-seeding base roles + flushing redis (fresh-DB safe)"
 # On a fresh DB the role service has only just migrated, so the earlier
 # [2/7] seed hit a missing `roles` table. Seed again now that the table
 # exists, then flush redis so no empty result cached before seeding leaks.
-docker exec pg-local-role-db-1 psql -U DRAGON -d role_db -c "
+docker exec e2e-postgres-identity psql -U postgres -d pg_identity -c "
 INSERT INTO roles (role_name, created_at, updated_at) VALUES
   ('ROLE_ADMIN',now(),now()),('ROLE_USER',now(),now()),('ROLE_MERCHANT',now(),now()),
   ('ROLE_CUSTOMER',now(),now()),('ROLE_MODERATOR',now(),now()),('ROLE_SUPERVISOR',now(),now()),

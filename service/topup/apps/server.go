@@ -49,7 +49,21 @@ func NewServer(cfg *server.Config) (*server.GRPCServer, error) {
 	saldoAdapter := adapter.NewSaldoAdapter(saldoClientQuery, saldoClientCmd, adapter.WithDependencyGuard(saldoGuard))
 	cardAdapter := adapter.NewCardAdapter(cardClientQuery, cardClientCmd, adapter.WithDependencyGuard(cardGuard))
 
-	repos := repository.NewRepositories(srv.GormDB, cardAdapter, saldoAdapter)
+	repos := repository.NewRepositories(
+		srv.GormDB,
+		cardClientQuery,
+		cardClientCmd,
+		saldoClientQuery,
+		saldoClientCmd,
+		repository.GuardOptions{
+			Card: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("card", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+			Saldo: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("saldo", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+		},
+	)
 	kafkaBrokers := strings.Split(viper.GetString("KAFKA_BROKERS"), ",")
 	myKafka, err := kafka.NewKafka(srv.Logger, kafkaBrokers)
 	if err != nil {

@@ -66,6 +66,74 @@ func (x *FindTransactionByMerchantIdRequest) GetMerchantId() int32 {
 	return 0
 }
 
+type FindAllTransactionByMerchantIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MerchantId    int32                  `protobuf:"varint,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Search        string                 `protobuf:"bytes,4,opt,name=search,proto3" json:"search,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FindAllTransactionByMerchantIdRequest) Reset() {
+	*x = FindAllTransactionByMerchantIdRequest{}
+	mi := &file_transaction_transaction_query_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FindAllTransactionByMerchantIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FindAllTransactionByMerchantIdRequest) ProtoMessage() {}
+
+func (x *FindAllTransactionByMerchantIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_transaction_transaction_query_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FindAllTransactionByMerchantIdRequest.ProtoReflect.Descriptor instead.
+func (*FindAllTransactionByMerchantIdRequest) Descriptor() ([]byte, []int) {
+	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *FindAllTransactionByMerchantIdRequest) GetMerchantId() int32 {
+	if x != nil {
+		return x.MerchantId
+	}
+	return 0
+}
+
+func (x *FindAllTransactionByMerchantIdRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *FindAllTransactionByMerchantIdRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *FindAllTransactionByMerchantIdRequest) GetSearch() string {
+	if x != nil {
+		return x.Search
+	}
+	return ""
+}
+
 type FindAllTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
@@ -77,7 +145,7 @@ type FindAllTransactionRequest struct {
 
 func (x *FindAllTransactionRequest) Reset() {
 	*x = FindAllTransactionRequest{}
-	mi := &file_transaction_transaction_query_proto_msgTypes[1]
+	mi := &file_transaction_transaction_query_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -89,7 +157,7 @@ func (x *FindAllTransactionRequest) String() string {
 func (*FindAllTransactionRequest) ProtoMessage() {}
 
 func (x *FindAllTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_transaction_query_proto_msgTypes[1]
+	mi := &file_transaction_transaction_query_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -102,7 +170,7 @@ func (x *FindAllTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FindAllTransactionRequest.ProtoReflect.Descriptor instead.
 func (*FindAllTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{1}
+	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *FindAllTransactionRequest) GetPage() int32 {
@@ -138,7 +206,7 @@ type FindAllTransactionCardNumberRequest struct {
 
 func (x *FindAllTransactionCardNumberRequest) Reset() {
 	*x = FindAllTransactionCardNumberRequest{}
-	mi := &file_transaction_transaction_query_proto_msgTypes[2]
+	mi := &file_transaction_transaction_query_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +218,7 @@ func (x *FindAllTransactionCardNumberRequest) String() string {
 func (*FindAllTransactionCardNumberRequest) ProtoMessage() {}
 
 func (x *FindAllTransactionCardNumberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_transaction_query_proto_msgTypes[2]
+	mi := &file_transaction_transaction_query_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +231,7 @@ func (x *FindAllTransactionCardNumberRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use FindAllTransactionCardNumberRequest.ProtoReflect.Descriptor instead.
 func (*FindAllTransactionCardNumberRequest) Descriptor() ([]byte, []int) {
-	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{2}
+	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *FindAllTransactionCardNumberRequest) GetCardNumber() string {
@@ -206,7 +274,7 @@ type ApiResponsePaginationTransaction struct {
 
 func (x *ApiResponsePaginationTransaction) Reset() {
 	*x = ApiResponsePaginationTransaction{}
-	mi := &file_transaction_transaction_query_proto_msgTypes[3]
+	mi := &file_transaction_transaction_query_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -218,7 +286,7 @@ func (x *ApiResponsePaginationTransaction) String() string {
 func (*ApiResponsePaginationTransaction) ProtoMessage() {}
 
 func (x *ApiResponsePaginationTransaction) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_transaction_query_proto_msgTypes[3]
+	mi := &file_transaction_transaction_query_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -231,7 +299,7 @@ func (x *ApiResponsePaginationTransaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponsePaginationTransaction.ProtoReflect.Descriptor instead.
 func (*ApiResponsePaginationTransaction) Descriptor() ([]byte, []int) {
-	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{3}
+	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ApiResponsePaginationTransaction) GetStatus() string {
@@ -274,7 +342,7 @@ type ApiResponsePaginationTransactionDeleteAt struct {
 
 func (x *ApiResponsePaginationTransactionDeleteAt) Reset() {
 	*x = ApiResponsePaginationTransactionDeleteAt{}
-	mi := &file_transaction_transaction_query_proto_msgTypes[4]
+	mi := &file_transaction_transaction_query_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +354,7 @@ func (x *ApiResponsePaginationTransactionDeleteAt) String() string {
 func (*ApiResponsePaginationTransactionDeleteAt) ProtoMessage() {}
 
 func (x *ApiResponsePaginationTransactionDeleteAt) ProtoReflect() protoreflect.Message {
-	mi := &file_transaction_transaction_query_proto_msgTypes[4]
+	mi := &file_transaction_transaction_query_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +367,7 @@ func (x *ApiResponsePaginationTransactionDeleteAt) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ApiResponsePaginationTransactionDeleteAt.ProtoReflect.Descriptor instead.
 func (*ApiResponsePaginationTransactionDeleteAt) Descriptor() ([]byte, []int) {
-	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{4}
+	return file_transaction_transaction_query_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ApiResponsePaginationTransactionDeleteAt) GetStatus() string {
@@ -337,7 +405,13 @@ const file_transaction_transaction_query_proto_rawDesc = "" +
 	"#transaction/transaction_query.proto\x12\x0epb.transaction\x1a\x10common/api.proto\x1a\x1dtransaction/transaction.proto\"E\n" +
 	"\"FindTransactionByMerchantIdRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\x05R\n" +
-	"merchantId\"d\n" +
+	"merchantId\"\x91\x01\n" +
+	"%FindAllTransactionByMerchantIdRequest\x12\x1f\n" +
+	"\vmerchant_id\x18\x01 \x01(\x05R\n" +
+	"merchantId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x16\n" +
+	"\x06search\x18\x04 \x01(\tR\x06search\"d\n" +
 	"\x19FindAllTransactionRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x16\n" +
@@ -357,12 +431,13 @@ const file_transaction_transaction_query_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12?\n" +
 	"\x04data\x18\x03 \x03(\v2+.pb.transaction.TransactionResponseDeleteAtR\x04data\x12A\n" +
-	"\x0epaginationMeta\x18\x04 \x01(\v2\x19.pb.common.PaginationMetaR\x0epaginationMeta2\xfe\x05\n" +
+	"\x0epaginationMeta\x18\x04 \x01(\v2\x19.pb.common.PaginationMetaR\x0epaginationMeta2\x8a\a\n" +
 	"\x17TransactionQueryService\x12q\n" +
 	"\x12FindAllTransaction\x12).pb.transaction.FindAllTransactionRequest\x1a0.pb.transaction.ApiResponsePaginationTransaction\x12\x87\x01\n" +
 	"\x1eFindAllTransactionByCardNumber\x123.pb.transaction.FindAllTransactionCardNumberRequest\x1a0.pb.transaction.ApiResponsePaginationTransaction\x12i\n" +
 	"\x13FindByIdTransaction\x12*.pb.transaction.FindByIdTransactionRequest\x1a&.pb.transaction.ApiResponseTransaction\x12z\n" +
-	"\x1bFindTransactionByMerchantId\x122.pb.transaction.FindTransactionByMerchantIdRequest\x1a'.pb.transaction.ApiResponseTransactions\x12~\n" +
+	"\x1bFindTransactionByMerchantId\x122.pb.transaction.FindTransactionByMerchantIdRequest\x1a'.pb.transaction.ApiResponseTransactions\x12\x89\x01\n" +
+	"\x1eFindAllTransactionByMerchantId\x125.pb.transaction.FindAllTransactionByMerchantIdRequest\x1a0.pb.transaction.ApiResponsePaginationTransaction\x12~\n" +
 	"\x17FindByActiveTransaction\x12).pb.transaction.FindAllTransactionRequest\x1a8.pb.transaction.ApiResponsePaginationTransactionDeleteAt\x12\x7f\n" +
 	"\x18FindByTrashedTransaction\x12).pb.transaction.FindAllTransactionRequest\x1a8.pb.transaction.ApiResponsePaginationTransactionDeleteAtBHZFgithub.com/MamangRust/microservice-payment-gateway-grpc/pb/transactionb\x06proto3"
 
@@ -378,39 +453,42 @@ func file_transaction_transaction_query_proto_rawDescGZIP() []byte {
 	return file_transaction_transaction_query_proto_rawDescData
 }
 
-var file_transaction_transaction_query_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_transaction_transaction_query_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_transaction_transaction_query_proto_goTypes = []any{
 	(*FindTransactionByMerchantIdRequest)(nil),       // 0: pb.transaction.FindTransactionByMerchantIdRequest
-	(*FindAllTransactionRequest)(nil),                // 1: pb.transaction.FindAllTransactionRequest
-	(*FindAllTransactionCardNumberRequest)(nil),      // 2: pb.transaction.FindAllTransactionCardNumberRequest
-	(*ApiResponsePaginationTransaction)(nil),         // 3: pb.transaction.ApiResponsePaginationTransaction
-	(*ApiResponsePaginationTransactionDeleteAt)(nil), // 4: pb.transaction.ApiResponsePaginationTransactionDeleteAt
-	(*TransactionResponse)(nil),                      // 5: pb.transaction.TransactionResponse
-	(*common.PaginationMeta)(nil),                    // 6: pb.common.PaginationMeta
-	(*TransactionResponseDeleteAt)(nil),              // 7: pb.transaction.TransactionResponseDeleteAt
-	(*FindByIdTransactionRequest)(nil),               // 8: pb.transaction.FindByIdTransactionRequest
-	(*ApiResponseTransaction)(nil),                   // 9: pb.transaction.ApiResponseTransaction
-	(*ApiResponseTransactions)(nil),                  // 10: pb.transaction.ApiResponseTransactions
+	(*FindAllTransactionByMerchantIdRequest)(nil),    // 1: pb.transaction.FindAllTransactionByMerchantIdRequest
+	(*FindAllTransactionRequest)(nil),                // 2: pb.transaction.FindAllTransactionRequest
+	(*FindAllTransactionCardNumberRequest)(nil),      // 3: pb.transaction.FindAllTransactionCardNumberRequest
+	(*ApiResponsePaginationTransaction)(nil),         // 4: pb.transaction.ApiResponsePaginationTransaction
+	(*ApiResponsePaginationTransactionDeleteAt)(nil), // 5: pb.transaction.ApiResponsePaginationTransactionDeleteAt
+	(*TransactionResponse)(nil),                      // 6: pb.transaction.TransactionResponse
+	(*common.PaginationMeta)(nil),                    // 7: pb.common.PaginationMeta
+	(*TransactionResponseDeleteAt)(nil),              // 8: pb.transaction.TransactionResponseDeleteAt
+	(*FindByIdTransactionRequest)(nil),               // 9: pb.transaction.FindByIdTransactionRequest
+	(*ApiResponseTransaction)(nil),                   // 10: pb.transaction.ApiResponseTransaction
+	(*ApiResponseTransactions)(nil),                  // 11: pb.transaction.ApiResponseTransactions
 }
 var file_transaction_transaction_query_proto_depIdxs = []int32{
-	5,  // 0: pb.transaction.ApiResponsePaginationTransaction.data:type_name -> pb.transaction.TransactionResponse
-	6,  // 1: pb.transaction.ApiResponsePaginationTransaction.paginationMeta:type_name -> pb.common.PaginationMeta
-	7,  // 2: pb.transaction.ApiResponsePaginationTransactionDeleteAt.data:type_name -> pb.transaction.TransactionResponseDeleteAt
-	6,  // 3: pb.transaction.ApiResponsePaginationTransactionDeleteAt.paginationMeta:type_name -> pb.common.PaginationMeta
-	1,  // 4: pb.transaction.TransactionQueryService.FindAllTransaction:input_type -> pb.transaction.FindAllTransactionRequest
-	2,  // 5: pb.transaction.TransactionQueryService.FindAllTransactionByCardNumber:input_type -> pb.transaction.FindAllTransactionCardNumberRequest
-	8,  // 6: pb.transaction.TransactionQueryService.FindByIdTransaction:input_type -> pb.transaction.FindByIdTransactionRequest
+	6,  // 0: pb.transaction.ApiResponsePaginationTransaction.data:type_name -> pb.transaction.TransactionResponse
+	7,  // 1: pb.transaction.ApiResponsePaginationTransaction.paginationMeta:type_name -> pb.common.PaginationMeta
+	8,  // 2: pb.transaction.ApiResponsePaginationTransactionDeleteAt.data:type_name -> pb.transaction.TransactionResponseDeleteAt
+	7,  // 3: pb.transaction.ApiResponsePaginationTransactionDeleteAt.paginationMeta:type_name -> pb.common.PaginationMeta
+	2,  // 4: pb.transaction.TransactionQueryService.FindAllTransaction:input_type -> pb.transaction.FindAllTransactionRequest
+	3,  // 5: pb.transaction.TransactionQueryService.FindAllTransactionByCardNumber:input_type -> pb.transaction.FindAllTransactionCardNumberRequest
+	9,  // 6: pb.transaction.TransactionQueryService.FindByIdTransaction:input_type -> pb.transaction.FindByIdTransactionRequest
 	0,  // 7: pb.transaction.TransactionQueryService.FindTransactionByMerchantId:input_type -> pb.transaction.FindTransactionByMerchantIdRequest
-	1,  // 8: pb.transaction.TransactionQueryService.FindByActiveTransaction:input_type -> pb.transaction.FindAllTransactionRequest
-	1,  // 9: pb.transaction.TransactionQueryService.FindByTrashedTransaction:input_type -> pb.transaction.FindAllTransactionRequest
-	3,  // 10: pb.transaction.TransactionQueryService.FindAllTransaction:output_type -> pb.transaction.ApiResponsePaginationTransaction
-	3,  // 11: pb.transaction.TransactionQueryService.FindAllTransactionByCardNumber:output_type -> pb.transaction.ApiResponsePaginationTransaction
-	9,  // 12: pb.transaction.TransactionQueryService.FindByIdTransaction:output_type -> pb.transaction.ApiResponseTransaction
-	10, // 13: pb.transaction.TransactionQueryService.FindTransactionByMerchantId:output_type -> pb.transaction.ApiResponseTransactions
-	4,  // 14: pb.transaction.TransactionQueryService.FindByActiveTransaction:output_type -> pb.transaction.ApiResponsePaginationTransactionDeleteAt
-	4,  // 15: pb.transaction.TransactionQueryService.FindByTrashedTransaction:output_type -> pb.transaction.ApiResponsePaginationTransactionDeleteAt
-	10, // [10:16] is the sub-list for method output_type
-	4,  // [4:10] is the sub-list for method input_type
+	1,  // 8: pb.transaction.TransactionQueryService.FindAllTransactionByMerchantId:input_type -> pb.transaction.FindAllTransactionByMerchantIdRequest
+	2,  // 9: pb.transaction.TransactionQueryService.FindByActiveTransaction:input_type -> pb.transaction.FindAllTransactionRequest
+	2,  // 10: pb.transaction.TransactionQueryService.FindByTrashedTransaction:input_type -> pb.transaction.FindAllTransactionRequest
+	4,  // 11: pb.transaction.TransactionQueryService.FindAllTransaction:output_type -> pb.transaction.ApiResponsePaginationTransaction
+	4,  // 12: pb.transaction.TransactionQueryService.FindAllTransactionByCardNumber:output_type -> pb.transaction.ApiResponsePaginationTransaction
+	10, // 13: pb.transaction.TransactionQueryService.FindByIdTransaction:output_type -> pb.transaction.ApiResponseTransaction
+	11, // 14: pb.transaction.TransactionQueryService.FindTransactionByMerchantId:output_type -> pb.transaction.ApiResponseTransactions
+	4,  // 15: pb.transaction.TransactionQueryService.FindAllTransactionByMerchantId:output_type -> pb.transaction.ApiResponsePaginationTransaction
+	5,  // 16: pb.transaction.TransactionQueryService.FindByActiveTransaction:output_type -> pb.transaction.ApiResponsePaginationTransactionDeleteAt
+	5,  // 17: pb.transaction.TransactionQueryService.FindByTrashedTransaction:output_type -> pb.transaction.ApiResponsePaginationTransactionDeleteAt
+	11, // [11:18] is the sub-list for method output_type
+	4,  // [4:11] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -428,7 +506,7 @@ func file_transaction_transaction_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_transaction_transaction_query_proto_rawDesc), len(file_transaction_transaction_query_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

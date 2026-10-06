@@ -1,7 +1,7 @@
 package topupapimapper
 
 import (
-	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/topup/stats"
+	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/topup"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/response"
 )
 

@@ -20,15 +20,15 @@ import (
 
 type TransactionRepositoryTestSuite struct {
 	suite.Suite
-	ts          *tests.TestSuite
-	db          *gorm.DB
-	commandRepo repository.TransactionCommandRepository
-	queryRepo   repository.TransactionQueryRepository
-	userRepo    user_repo.UserCommandRepository
-	cardRepo    card_repo.Repositories
-	merchantRepo merchant_repo.Repositories
+	ts                 *tests.TestSuite
+	db                 *gorm.DB
+	commandRepo        repository.TransactionCommandRepository
+	queryRepo          repository.TransactionQueryRepository
+	userRepo           user_repo.UserCommandRepository
+	cardRepo           card_repo.Repositories
+	merchantRepo       merchant_repo.Repositories
 	customerCardNumber string
-	merchantID  int
+	merchantID         int
 }
 
 func (s *TransactionRepositoryTestSuite) SetupSuite() {
@@ -45,7 +45,7 @@ func (s *TransactionRepositoryTestSuite) SetupSuite() {
 	s.cardRepo = *card_repo.NewRepositories(gormDB, nil)
 	s.merchantRepo = merchant_repo.NewRepositories(gormDB, nil)
 
-	transactionRepos := repository.NewRepositories(gormDB, nil, nil, nil)
+	transactionRepos := repository.NewRepositories(gormDB, nil, nil, nil, nil, nil)
 	s.commandRepo = transactionRepos
 	s.queryRepo = transactionRepos
 
@@ -100,6 +100,8 @@ func (s *TransactionRepositoryTestSuite) TestFindById() {
 }
 
 func TestTransactionRepositorySuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(TransactionRepositoryTestSuite))
 }

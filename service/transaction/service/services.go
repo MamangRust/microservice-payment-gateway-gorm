@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/kafka"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
@@ -23,14 +22,14 @@ type Service interface {
 }
 
 type Deps struct {
-	Kafka            *kafka.Kafka
-	Repositories     repository.Repositories
-	MerchantAdapter  adapter.MerchantAdapter
-	CardAdapter      adapter.CardAdapter
-	SaldoAdapter     adapter.SaldoAdapter
-	Logger           logger.LoggerInterface
-	Cache            *cache.CacheStore
-	AISecurityClient ai_security.AISecurityServiceClient
+	Kafka             *kafka.Kafka
+	Repositories      repository.Repositories
+	MerchantAdapter   adapter.MerchantAdapter
+	CardAdapter       adapter.CardAdapter
+	SaldoAdapter      adapter.SaldoAdapter
+	Logger            logger.LoggerInterface
+	Cache             *cache.CacheStore
+	AISecurityAdapter adapter.AISecurityAdapter
 }
 
 func NewService(deps *Deps) Service {
@@ -65,6 +64,6 @@ func newTransactionCommandService(deps *Deps, observability observability.TraceL
 		OutboxStore:                  deps.Repositories,
 		Logger:                       deps.Logger,
 		Observability:                observability,
-		AISecurityClient:             deps.AISecurityClient,
+		AISecurityAdapter:            deps.AISecurityAdapter,
 	})
 }

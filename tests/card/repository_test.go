@@ -21,7 +21,7 @@ type CardRepositoryTestSuite struct {
 	ts       *tests.TestSuite
 	db       *gorm.DB
 	repo     *repository.Repositories
-	userRepo user_repo.Repositories
+	userRepo *user_repo.Repositories
 	userID   int
 }
 
@@ -37,10 +37,10 @@ func (s *CardRepositoryTestSuite) SetupSuite() {
 	s.db = gormDB
 
 	s.repo = repository.NewRepositories(gormDB, nil)
-	s.userRepo = user_repo.NewRepositories(gormDB)
+	s.userRepo = user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient})
 
 	// Create a user for card ownership
-	user, err := s.userRepo.UserCommand().CreateUser(context.Background(), &requests.CreateUserRequest{
+	user, err := s.userRepo.UserCommand.CreateUser(context.Background(), &requests.CreateUserRequest{
 		FirstName: "Card",
 		LastName:  "Owner",
 		Email:     fmt.Sprintf("card.owner-%d@example.com", time.Now().UnixNano()),

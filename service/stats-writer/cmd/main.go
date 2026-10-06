@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,8 +14,8 @@ import (
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/stats-writer/repository"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/stats-writer/usecase"
 	"github.com/spf13/viper"
-	"strings"
 	"go.uber.org/zap"
+	"strings"
 )
 
 func main() {
@@ -23,9 +24,21 @@ func main() {
 	}
 	log, _ := logger.NewLogger("stats-writer", nil)
 
+	// Database harus ada dulu sebelum NewClient bisa ping (client memakai
+	// CLICKHOUSE_DATABASE sebagai default-nya).
+	if err := clickhouse.EnsureDatabase(log); err != nil {
+		log.Fatal("Failed to ensure ClickHouse database", zap.Error(err))
+	}
+
 	chConn, err := clickhouse.NewClient(log)
 	if err != nil {
 		log.Fatal("Failed to connect to ClickHouse", zap.Error(err))
+	}
+
+	// Pastikan ketujuh tabel stats ada sebelum consumer Kafka mulai menulis.
+	// Ini yang menutup celah "skema cuma jalan saat volume kosong".
+	if err := clickhouse.ApplySchema(context.Background(), chConn, log); err != nil {
+		log.Fatal("Failed to apply ClickHouse schema", zap.Error(err))
 	}
 
 	brokers := strings.Split(viper.GetString("KAFKA_BROKERS"), ",")

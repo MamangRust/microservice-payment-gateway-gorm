@@ -60,7 +60,12 @@ func (s *UserHandlerTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.redisClient = redis.NewClient(opts)
 
-	repos := repository.NewRepositories(gormDB)
+	repos := repository.NewRepositories(&repository.Deps{
+		Db:              gormDB,
+		RoleQueryClient: s.ts.RoleClient,
+		UserRoleClient:  s.ts.UserRoleClient,
+		Guard:           repository.GuardOptions{},
+	})
 
 	logger.ResetInstance()
 	lp := sdklog.NewLoggerProvider()

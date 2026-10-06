@@ -12,20 +12,21 @@ pkill -9 -f /tmp/e2e-bin 2>/dev/null; sleep 3
 docker exec redis-local redis-cli -a dragon_knight FLUSHALL >/dev/null 2>&1
 
 COMMON_GRPC="GRPC_AUTH_ADDR=localhost:50051 GRPC_ROLE_ADDR=localhost:50052 GRPC_CARD_ADDR=localhost:50053 GRPC_MERCHANT_ADDR=localhost:50054 GRPC_USER_ADDR=localhost:50055 GRPC_SALDO_ADDR=localhost:50056 GRPC_TOPUP_ADDR=localhost:50057 GRPC_TRANSACTION_ADDR=localhost:50058 GRPC_TRANSFER_ADDR=localhost:50059 GRPC_WITHDRAW_ADDR=localhost:50060 GRPC_AI_SECURITY_ADDR=localhost:50051"
-COMMON="APP_ENV=test DB_DRIVER=postgres DB_USERNAME=DRAGON DB_PASSWORD=DRAGON SECRET_KEY=yantopedia KAFKA_BROKERS=localhost:9092 REDIS_ADDRS=localhost:6379 REDIS_PASSWORD=dragon_knight REDIS_DB=0 $COMMON_GRPC"
+COMMON_DB="DB_DRIVER=postgres DB_USERNAME=postgres DB_PASSWORD=password DB_IDENTITY_HOST=localhost DB_IDENTITY_PORT=6432 DB_IDENTITY_NAME=pg_identity DB_PAYMENT_HOST=localhost DB_PAYMENT_PORT=6433 DB_PAYMENT_NAME=pg_payment DB_FINANCIAL_HOST=localhost DB_FINANCIAL_PORT=6434 DB_FINANCIAL_NAME=pg_financial"
+COMMON="APP_ENV=test $COMMON_DB SECRET_KEY=yantopedia KAFKA_BROKERS=localhost:9092 REDIS_ADDRS=localhost:6379 REDIS_PASSWORD=dragon_knight REDIS_DB=0 $COMMON_GRPC"
 
 launch() { local svc=$1; shift; (cd service/$svc && env $COMMON "$@" /tmp/e2e-bin/$svc > /tmp/e2e-logs/$svc.log 2>&1 &); }
 
-launch auth DB_HOST=localhost DB_PORT=5433 DB_NAME=auth_db
-launch user DB_HOST=localhost DB_PORT=5434 DB_NAME=user_db
-launch role DB_HOST=localhost DB_PORT=5435 DB_NAME=role_db
-launch card DB_HOST=localhost DB_PORT=5436 DB_NAME=card_db BILLING_CYCLE_DAY=1
-launch merchant DB_HOST=localhost DB_PORT=5437 DB_NAME=merchant_db
-launch saldo DB_HOST=localhost DB_PORT=5438 DB_NAME=saldo_db
-launch topup DB_HOST=localhost DB_PORT=5439 DB_NAME=topup_db
-launch transaction DB_HOST=localhost DB_PORT=5440 DB_NAME=transaction_db
-launch transfer DB_HOST=localhost DB_PORT=5441 DB_NAME=transfer_db
-launch withdraw DB_HOST=localhost DB_PORT=5442 DB_NAME=withdraw_db WITHDRAW_DAILY_LIMIT=10000000
+launch auth
+launch user
+launch role
+launch card BILLING_CYCLE_DAY=1
+launch merchant
+launch saldo
+launch topup
+launch transaction
+launch transfer
+launch withdraw WITHDRAW_DAILY_LIMIT=10000000
 (cd service/stats-reader && env APP_ENV=test CLICKHOUSE_ADDR=localhost:9000 CLICKHOUSE_DATABASE=default CLICKHOUSE_USERNAME=dragon CLICKHOUSE_PASSWORD=dragon_knight /tmp/e2e-bin/stats-reader > /tmp/e2e-logs/stats-reader.log 2>&1 &)
 (cd service/stats-writer && env APP_ENV=test CLICKHOUSE_ADDR=localhost:9000 CLICKHOUSE_DATABASE=default CLICKHOUSE_USERNAME=dragon CLICKHOUSE_PASSWORD=dragon_knight KAFKA_BROKERS=localhost:9092 /tmp/e2e-bin/stats-writer > /tmp/e2e-logs/stats-writer.log 2>&1 &)
 cat > service/apigateway/.env <<'ENV'
@@ -81,10 +82,10 @@ echo "merchant card=$MCARD_NUM"
 curl -s -X POST "$B/api/saldo-command/create" -H "$AUTH" -H "Content-Type: application/json" -d "{\"card_number\": \"$MCARD_NUM\", \"total_balance\": 1000000}" > /dev/null
 
 echo "=== CARD DB STATE (user $USER_ID) ==="
-docker exec pg-local-card-db-1 psql -U DRAGON -d card_db -t -c "SELECT card_id, card_number, card_type, deleted_at FROM cards WHERE user_id = $USER_ID AND deleted_at IS NULL ORDER BY card_id LIMIT 5;"
+docker exec e2e-postgres-payment psql -U postgres -d pg_payment -t -c "SELECT card_id, card_number, card_type, deleted_at FROM cards WHERE user_id = $USER_ID AND deleted_at IS NULL ORDER BY card_id LIMIT 5;"
 
 echo "=== GET CARDBYUSERID RESULT (what FindCardByUserId sees) ==="
-docker exec pg-local-card-db-1 psql -U DRAGON -d card_db -t -c "SELECT card_id, card_number FROM cards WHERE user_id = $USER_ID AND deleted_at IS NULL LIMIT 1;"
+docker exec e2e-postgres-payment psql -U postgres -d pg_payment -t -c "SELECT card_id, card_number FROM cards WHERE user_id = $USER_ID AND deleted_at IS NULL LIMIT 1;"
 
 echo "=== TRANSACTION CREATE ==="
 RESP=$(curl -s -w "\nHTTP:%{http_code}" -X POST "$B/api/transaction-command/create" \

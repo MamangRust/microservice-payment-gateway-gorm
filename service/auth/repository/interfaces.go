@@ -56,7 +56,5 @@ type UserRoleRepository interface {
 }
 
 type RoleRepository interface {
-	FindById(ctx context.Context, id int) (*models.Role, error)
-
 	FindByName(ctx context.Context, name string) (*models.Role, error)
 }

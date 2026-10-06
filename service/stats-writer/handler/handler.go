@@ -1,15 +1,14 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/stats-writer/usecase"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/events"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/idempotent_consumer"
-	"go.uber.org/zap"
 )
 
 // statEnvelope mirrors the outbox envelope for dedup.
@@ -49,82 +48,40 @@ func (h *StatsHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 			raw = env.Payload
 		}
 
-		switch msg.Topic {
-		case "payment.transaction.created", "stats-topic-transaction-events":
-			var event events.TransactionEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal transaction event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveTransactionEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save transaction event", zap.Error(err))
-				continue
-			}
-		case "stats-topic-topup-events":
-			var event events.TopupEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal topup event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveTopupEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save topup event", zap.Error(err))
-				continue
-			}
-		case "stats-topic-transfer-events":
-			var event events.TransferEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal transfer event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveTransferEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save transfer event", zap.Error(err))
-				continue
-			}
-		case "stats-topic-withdraw-events":
-			var event events.WithdrawEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal withdraw event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveWithdrawEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save withdraw event", zap.Error(err))
-				continue
-			}
-		case "stats-topic-saldo-events":
-			var event events.SaldoEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal saldo event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveSaldoEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save saldo event", zap.Error(err))
-				continue
-			}
-		case "stats-topic-merchant-events":
-			var event events.MerchantEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal merchant event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveMerchantEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save merchant event", zap.Error(err))
-				continue
-			}
-		case "stats-topic-card-events":
-			var event events.CardEvent
-			if err := json.Unmarshal(raw, &event); err != nil {
-				h.log.Error("Failed to unmarshal card event", zap.Error(err))
-				continue
-			}
-			if err := h.useCase.SaveCardEvent(session.Context(), event); err != nil {
-				h.log.Error("Failed to save card event", zap.Error(err))
-				continue
-			}
+		// Pesan yang gagal diproses sengaja TIDAK di-MarkMessage, supaya Kafka
+		// mengirim ulang (at-least-once) alih-alih event hilang diam-diam.
+		if err := h.dispatch(session.Context(), msg.Topic, raw); err != nil {
+			continue
 		}
 
 		session.MarkMessage(msg, "")
 	}
 	return nil
+}
+
+// dispatch mengarahkan satu pesan Kafka ke handler pemilik topic-nya dan
+// mengembalikan error pemrosesan. Tiap handler tinggal di file domainnya sendiri
+// (transaction_handler.go, topup_handler.go, dst.) supaya penambahan event baru
+// tidak menumpuk di satu switch raksasa. Topic yang tidak dikenal bukan error.
+func (h *StatsHandler) dispatch(ctx context.Context, topic string, raw []byte) error {
+	switch topic {
+	case "payment.transaction.created", "stats-topic-transaction-events":
+		return h.handleTransaction(ctx, raw)
+	case "stats-topic-topup-events":
+		return h.handleTopup(ctx, raw)
+	case "stats-topic-transfer-events":
+		return h.handleTransfer(ctx, raw)
+	case "stats-topic-withdraw-events":
+		return h.handleWithdraw(ctx, raw)
+	case "stats-topic-saldo-events":
+		return h.handleSaldo(ctx, raw)
+	case "stats-topic-merchant-events":
+		return h.handleMerchant(ctx, raw)
+	case "stats-topic-card-events":
+		return h.handleCard(ctx, raw)
+	default:
+		return nil
+	}
 }
 
 func (h *StatsHandler) tryUnwrap(raw []byte) *statEnvelope {

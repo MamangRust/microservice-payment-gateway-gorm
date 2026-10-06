@@ -25,7 +25,7 @@ type CardServiceTestSuite struct {
 	ts          *tests.TestSuite
 	db          *gorm.DB
 	service     service.Service
-	userRepo    user_repo.Repositories
+	userRepo    *user_repo.Repositories
 	redisClient redis.UniversalClient
 	userID      int
 	cardID      int
@@ -47,7 +47,7 @@ func (s *CardServiceTestSuite) SetupSuite() {
 	s.redisClient = redis.NewClient(opts)
 
 	repos := repository.NewRepositories(gormDB, nil)
-	s.userRepo = user_repo.NewRepositories(gormDB)
+	s.userRepo = user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient})
 
 	logger.ResetInstance()
 	lp := sdklog.NewLoggerProvider()
@@ -64,7 +64,7 @@ func (s *CardServiceTestSuite) SetupSuite() {
 	})
 
 	// Create a user for card ownership
-	user, err := s.userRepo.UserCommand().CreateUser(context.Background(), &requests.CreateUserRequest{
+	user, err := s.userRepo.UserCommand.CreateUser(context.Background(), &requests.CreateUserRequest{
 		FirstName: "Card",
 		LastName:  "Service",
 		Email:     "card.service@example.com",

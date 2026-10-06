@@ -9,10 +9,10 @@ import (
 
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/user"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/user/service"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/convert"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors"
 	user_errors "github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors/user_errors/grpc"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/convert"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -27,7 +27,6 @@ func NewUserQueryHandleGrpc(query service.UserQueryService) UserQueryHandleGrpc 
 		userQueryService: query,
 	}
 }
-
 
 func (s *userQueryHandleGrpc) FindAll(ctx context.Context, request *pb.FindAllUserRequest) (*pb.ApiResponsePaginationUser, error) {
 	page := int(request.GetPage())

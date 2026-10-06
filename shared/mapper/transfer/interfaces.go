@@ -2,7 +2,7 @@ package transferapimapper
 
 import (
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer"
-	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer/stats"
+	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transfer"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/response"
 )
 

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package pb.user_role;
+
+import "role/role.proto";
+
+option go_package = "github.com/MamangRust/microservice-payment-gateway-grpc/pb/user_role";
+
+message CreateUserRoleRequest {
+  int32 user_id = 1;
+  int32 role_id = 2;
+}
+
+message DeleteUserRoleRequest {
+  int32 user_id = 1;
+  int32 role_id = 2;
+}
+
+message FindByIdUserRoleRequest {
+  int32 user_id = 1;
+}
+
+service UserRoleService {
+  rpc CreateUserRole(CreateUserRoleRequest) returns (pb.role.ApiResponseRole) {}
+  rpc DeleteUserRole(DeleteUserRoleRequest) returns (pb.role.ApiResponseRole) {}
+  rpc FindByUserId(FindByIdUserRoleRequest) returns (pb.role.ApiResponsesRole) {}
+}

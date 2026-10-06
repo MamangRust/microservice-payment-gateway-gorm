@@ -14,8 +14,6 @@ message FindAllRoleRequest {
 
 message FindByIdRoleRequest { int32 role_id = 1; }
 
-message FindByIdUserRoleRequest { int32 user_id = 1; }
-
 message FindByNameRoleRequest { string name = 1; }
 
 message RoleResponse {

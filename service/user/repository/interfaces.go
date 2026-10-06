@@ -3,9 +3,14 @@ package repository
 import (
 	"context"
 
+	userroleadapter "github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter/user_role"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 )
+
+// UserRoleRepository is the user-role command surface, provided by the shared
+// user_role gRPC adapter so this service never holds a raw gRPC client.
+type UserRoleRepository = userroleadapter.CommandRepository
 
 type UserQueryRepository interface {
 	FindAllUsers(ctx context.Context, req *requests.FindAllUsers) ([]*models.User, error)

@@ -60,26 +60,47 @@ func NewServer(cfg *server.Config) (*server.GRPCServer, error) {
 	saldoGuard := resilience.NewDependencyGuard("saldo", 5, 30, 100, 3*time.Second, srv.Logger)
 	cardGuard := resilience.NewDependencyGuard("card", 5, 30, 100, 3*time.Second, srv.Logger)
 	merchantGuard := resilience.NewDependencyGuard("merchant", 5, 30, 100, 3*time.Second, srv.Logger)
+	aiSecurityGuard := resilience.NewDependencyGuard("ai_security", 5, 30, 100, 3*time.Second, srv.Logger)
 
 	saldoAdapter := adapter.NewSaldoAdapter(saldoClientQuery, saldoClientCmd, adapter.WithDependencyGuard(saldoGuard))
 	cardAdapter := adapter.NewCardAdapter(cardClientQuery, cardClientCmd, adapter.WithDependencyGuard(cardGuard))
 	merchantAdapter := adapter.NewMerchantAdapter(merchantClientQuery, adapter.WithDependencyGuard(merchantGuard))
+	aiSecurityAdapter := adapter.NewAISecurityAdapter(aiClient, adapter.WithDependencyGuard(aiSecurityGuard))
 
-	repos := repository.NewRepositories(srv.GormDB, saldoAdapter, cardAdapter, merchantAdapter)
+	repos := repository.NewRepositories(
+		srv.GormDB,
+		saldoClientQuery,
+		saldoClientCmd,
+		cardClientQuery,
+		cardClientCmd,
+		merchantClientQuery,
+		repository.GuardOptions{
+			Saldo: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("saldo", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+			Card: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("card", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+			Merchant: []adapter.GuardOption{
+				adapter.WithDependencyGuard(resilience.NewDependencyGuard("merchant", 5, 30, 100, 3*time.Second, srv.Logger)),
+			},
+		},
+	)
+
 	kafkaBrokers := strings.Split(viper.GetString("KAFKA_BROKERS"), ",")
 	myKafka, err := kafka.NewKafka(srv.Logger, kafkaBrokers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
 	svc := service.NewService(&service.Deps{
-		Kafka:            myKafka,
-		Repositories:     repos,
-		Logger:           srv.Logger,
-		Cache:            srv.CacheStore,
-		AISecurityClient: aiClient,
-		MerchantAdapter:  merchantAdapter,
-		CardAdapter:      cardAdapter,
-		SaldoAdapter:     saldoAdapter,
+		Kafka:             myKafka,
+		Repositories:      repos,
+		Logger:            srv.Logger,
+		Cache:             srv.CacheStore,
+		AISecurityAdapter: aiSecurityAdapter,
+		MerchantAdapter:   merchantAdapter,
+		CardAdapter:       cardAdapter,
+		SaldoAdapter:      saldoAdapter,
 	})
 	svc.StartRecoveryWorker(srv.Ctx, 30*time.Second, 2*time.Minute, 100)
 

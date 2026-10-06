@@ -3,9 +3,9 @@ package transfer_test
 import (
 	"context"
 
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	saldo_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/repository"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 )
 

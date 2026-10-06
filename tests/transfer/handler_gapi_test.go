@@ -8,8 +8,9 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	pbAISecurity "github.com/MamangRust/microservice-payment-gateway-grpc/pb/ai_security"
+	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/transfer"
 	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer"
-	pbStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/transfer/stats"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/adapter"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	card_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	saldo_repo "github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo/repository"
@@ -86,10 +87,10 @@ func (s *TransferGapiTestSuite) SetupSuite() {
 	// Repositories for seeding
 	s.userRepo = user_repo.NewUserCommandRepository(gormDB)
 	s.cardRepo = card_repo.NewRepositories(gormDB, nil)
-	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil)
+	s.saldoRepo = saldo_repo.NewRepositories(gormDB, nil, nil)
 
 	// Transfer repos
-	s.repos = repository.NewRepositories(gormDB, s.saldoRepo, s.cardRepo.CardQuery)
+	s.repos = repository.NewRepositories(gormDB, nil, nil, nil, nil)
 
 	opts, err := redis.ParseURL(s.ts.RedisURL)
 	s.Require().NoError(err)
@@ -112,13 +113,13 @@ func (s *TransferGapiTestSuite) SetupSuite() {
 	aiSecurityClient := pbAISecurity.NewAISecurityServiceClient(conn)
 
 	transferService := service.NewService(&service.Deps{
-		Kafka:            nil,
-		Repositories:     s.repos,
-		CardAdapter:      s.ts.CardAdapter,
-		SaldoAdapter:     s.ts.SaldoAdapter,
-		Logger:           log,
-		Cache:            cacheStore,
-		AISecurityClient: aiSecurityClient,
+		Kafka:             nil,
+		Repositories:      s.repos,
+		CardAdapter:       s.ts.CardAdapter,
+		SaldoAdapter:      s.ts.SaldoAdapter,
+		Logger:            log,
+		Cache:             cacheStore,
+		AISecurityAdapter: adapter.NewAISecurityAdapter(aiSecurityClient),
 	})
 
 	transferHandlerGapi := handler.NewHandler(transferService)

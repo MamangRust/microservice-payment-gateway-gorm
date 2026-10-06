@@ -1,7 +1,7 @@
 package merchantapimapper
 
 import (
-	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/merchant/stats"
+	pbstats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/merchant"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/response"
 )
 

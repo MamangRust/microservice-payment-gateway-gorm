@@ -15,9 +15,9 @@ import (
 
 type UserRepositoryTestSuite struct {
 	suite.Suite
-	ts   *tests.TestSuite
-	db   *gorm.DB
-	repo repository.UserCommandRepository
+	ts     *tests.TestSuite
+	db     *gorm.DB
+	repo   repository.UserCommandRepository
 	userID int
 }
 

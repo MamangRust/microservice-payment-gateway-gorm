@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
+	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/role"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
 	"github.com/stretchr/testify/require"
-	pb "github.com/MamangRust/microservice-payment-gateway-grpc/pb/role"
 )
 
 type roleQueryServiceStub struct {

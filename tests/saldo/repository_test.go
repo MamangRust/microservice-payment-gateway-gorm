@@ -19,11 +19,11 @@ import (
 
 type SaldoRepositoryTestSuite struct {
 	suite.Suite
-	ts   *tests.TestSuite
-	db   *gorm.DB
-	repo saldo_repo.Repositories
-	userRepo user_repo.UserCommandRepository
-	cardRepo card_repo.CardCommandRepository
+	ts         *tests.TestSuite
+	db         *gorm.DB
+	repo       saldo_repo.Repositories
+	userRepo   user_repo.UserCommandRepository
+	cardRepo   card_repo.CardCommandRepository
 	cardNumber string
 }
 
@@ -37,8 +37,8 @@ func (s *SaldoRepositoryTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.db = gormDB
 
-	s.repo = saldo_repo.NewRepositories(gormDB, nil)
-	s.userRepo = user_repo.NewRepositories(gormDB).UserCommand()
+	s.repo = saldo_repo.NewRepositories(gormDB, nil, nil)
+	s.userRepo = user_repo.NewRepositories(&user_repo.Deps{Db: gormDB, RoleQueryClient: s.ts.RoleQueryClient, UserRoleClient: s.ts.UserRoleClient}).UserCommand
 	s.cardRepo = card_repo.NewRepositories(gormDB, nil).CardCommand
 
 	ctx := context.Background()
@@ -81,6 +81,8 @@ func (s *SaldoRepositoryTestSuite) TestUpdateSaldoBalance() {
 }
 
 func TestSaldoRepositorySuite(t *testing.T) {
-	if testing.Short() { t.Skip("skipping integration test") }
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 	suite.Run(t, new(SaldoRepositoryTestSuite))
 }

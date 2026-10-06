@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/MamangRust/microservice-payment-gateway-grpc/service/user/apps"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/server"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/service/user/apps"
 )
 
 func main() {
@@ -12,7 +13,7 @@ func main() {
 		Environment:    "production",
 		OtelEndpoint:   "otel-collector:4317",
 		Port:           50055,
-		DBCluster:      "DB_A",
+		DBCluster:      database.IdentityCluster,
 		RedisCluster:   "REDIS_2",
 		MigrationPath:  "./database/migration",
 	})

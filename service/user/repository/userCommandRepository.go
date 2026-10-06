@@ -57,10 +57,10 @@ func (r *userCommandRepository) UpdateUser(ctx context.Context, request *request
 	}
 
 	err = r.db.WithContext(ctx).Model(&user).Updates(map[string]interface{}{
-		"firstname": request.FirstName,
-		"lastname":  request.LastName,
-		"email":     request.Email,
-		"password":  request.Password,
+		"firstname":  request.FirstName,
+		"lastname":   request.LastName,
+		"email":      request.Email,
+		"password":   request.Password,
 		"updated_at": time.Now(),
 	}).Error
 	if err != nil {

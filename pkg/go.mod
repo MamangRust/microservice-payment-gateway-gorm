@@ -6,10 +6,6 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/IBM/sarama v1.46.3
 	github.com/MamangRust/microservice-payment-gateway-grpc/pb v0.0.0-00010101000000-000000000000
-	github.com/MamangRust/microservice-payment-gateway-grpc/service/card v0.0.0-00010101000000-000000000000
-	github.com/MamangRust/microservice-payment-gateway-grpc/service/merchant v0.0.0-00010101000000-000000000000
-	github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo v0.0.0-00010101000000-000000000000
-	github.com/MamangRust/microservice-payment-gateway-grpc/service/user v0.0.0-00010101000000-000000000000
 	github.com/MamangRust/microservice-payment-gateway-grpc/shared v0.0.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -125,23 +121,15 @@ replace github.com/MamangRust/microservice-payment-gateway-grpc/service/apigatew
 
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/auth => ../service/auth
 
-replace github.com/MamangRust/microservice-payment-gateway-grpc/service/card => ../service/card
-
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/email => ../service/email
 
-replace github.com/MamangRust/microservice-payment-gateway-grpc/service/merchant => ../service/merchant
-
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/role => ../service/role
-
-replace github.com/MamangRust/microservice-payment-gateway-grpc/service/saldo => ../service/saldo
 
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/topup => ../service/topup
 
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/transaction => ../service/transaction
 
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/transfer => ../service/transfer
-
-replace github.com/MamangRust/microservice-payment-gateway-grpc/service/user => ../service/user
 
 replace github.com/MamangRust/microservice-payment-gateway-grpc/service/withdraw => ../service/withdraw
 

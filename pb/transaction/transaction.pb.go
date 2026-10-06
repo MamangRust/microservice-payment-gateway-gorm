@@ -381,6 +381,7 @@ type TransactionResponse struct {
 	TransactionTime string                 `protobuf:"bytes,7,opt,name=transaction_time,json=transactionTime,proto3" json:"transaction_time,omitempty"`
 	CreatedAt       string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt       string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	DeletedAt       string                 `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -474,6 +475,13 @@ func (x *TransactionResponse) GetCreatedAt() string {
 func (x *TransactionResponse) GetUpdatedAt() string {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *TransactionResponse) GetDeletedAt() string {
+	if x != nil {
+		return x.DeletedAt
 	}
 	return ""
 }
@@ -801,7 +809,7 @@ const file_transaction_transaction_proto_rawDesc = "" +
 	"\vcard_number\x18\x01 \x01(\tR\n" +
 	"cardNumber\x12\x12\n" +
 	"\x04year\x18\x02 \x01(\x05R\x04year\x12\x14\n" +
-	"\x05month\x18\x03 \x01(\x05R\x05month\"\xb6\x02\n" +
+	"\x05month\x18\x03 \x01(\x05R\x05month\"\xd5\x02\n" +
 	"\x13TransactionResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1f\n" +
 	"\vcard_number\x18\x02 \x01(\tR\n" +
@@ -815,7 +823,10 @@ const file_transaction_transaction_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\tR\tupdatedAt\"\xfb\x02\n" +
+	"updated_at\x18\t \x01(\tR\tupdatedAt\x12\x1d\n" +
+	"\n" +
+	"deleted_at\x18\n" +
+	" \x01(\tR\tdeletedAt\"\xfb\x02\n" +
 	"\x1bTransactionResponseDeleteAt\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1f\n" +
 	"\vcard_number\x18\x02 \x01(\tR\n" +

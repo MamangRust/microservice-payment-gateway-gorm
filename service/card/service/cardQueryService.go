@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	mencache "github.com/MamangRust/microservice-payment-gateway-grpc/service/card/redis"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/card/repository"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/domain/requests"
@@ -18,7 +18,6 @@ import (
 type cardQueryServiceDeps struct {
 	Cache               mencache.CardQueryCache
 	CardQueryRepository repository.CardQueryRepository
-	UserRepository      repository.UserRepository
 	Logger              logger.LoggerInterface
 	Observability       observability.TraceLoggerObservability
 }
@@ -26,7 +25,6 @@ type cardQueryServiceDeps struct {
 type cardQueryService struct {
 	cache               mencache.CardQueryCache
 	cardQueryRepository repository.CardQueryRepository
-	userRepository      repository.UserRepository
 	logger              logger.LoggerInterface
 	observability       observability.TraceLoggerObservability
 }
@@ -34,7 +32,6 @@ type cardQueryService struct {
 func NewCardQueryService(params *cardQueryServiceDeps) CardQueryService {
 	return &cardQueryService{
 		cardQueryRepository: params.CardQueryRepository,
-		userRepository:      params.UserRepository,
 		logger:              params.Logger,
 		observability:       params.Observability,
 		cache:               params.Cache,

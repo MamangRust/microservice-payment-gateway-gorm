@@ -9,6 +9,13 @@ import "transaction/transaction.proto";
 
 message FindTransactionByMerchantIdRequest { int32 merchant_id = 1; }
 
+message FindAllTransactionByMerchantIdRequest {
+  int32 merchant_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  string search = 4;
+}
+
 message FindAllTransactionRequest {
   int32 page = 1;
   int32 page_size = 2;
@@ -46,6 +53,8 @@ service TransactionQueryService {
       returns (ApiResponseTransaction);
   rpc FindTransactionByMerchantId(FindTransactionByMerchantIdRequest)
       returns (ApiResponseTransactions);
+  rpc FindAllTransactionByMerchantId(FindAllTransactionByMerchantIdRequest)
+      returns (ApiResponsePaginationTransaction);
   rpc FindByActiveTransaction(FindAllTransactionRequest)
       returns (ApiResponsePaginationTransactionDeleteAt);
   rpc FindByTrashedTransaction(FindAllTransactionRequest)

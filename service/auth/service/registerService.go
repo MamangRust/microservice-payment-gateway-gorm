@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 	mencache "github.com/MamangRust/microservice-payment-gateway-grpc/service/auth/redis"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/service/auth/repository"
-	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/database/models"
 
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/email"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/hash"

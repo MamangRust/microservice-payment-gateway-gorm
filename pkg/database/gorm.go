@@ -26,6 +26,12 @@ func NewGormClientWithPrefix(log logger.LoggerInterface, prefix string) (*gorm.D
 		prefix = "DB"
 	}
 
+	cluster, err := resolveClusterConfig(prefix)
+	if err != nil {
+		log.Error("Invalid database cluster configuration", zap.Error(err), zap.String("prefix", prefix))
+		return nil, err
+	}
+
 	dbDriver := viper.GetString(fmt.Sprintf("%s_DRIVER", prefix))
 	if dbDriver == "" {
 		dbDriver = viper.GetString("DB_DRIVER")
@@ -36,37 +42,7 @@ func NewGormClientWithPrefix(log logger.LoggerInterface, prefix string) (*gorm.D
 		return nil, fmt.Errorf("gorm postgres driver only supports PostgreSQL, got: %s", dbDriver)
 	}
 
-	hostKey := fmt.Sprintf("%s_HOST", prefix)
-	portKey := fmt.Sprintf("%s_PORT", prefix)
-	userKey := fmt.Sprintf("%s_USERNAME", prefix)
-	nameKey := fmt.Sprintf("%s_NAME", prefix)
-	passKey := fmt.Sprintf("%s_PASSWORD", prefix)
-
-	host := viper.GetString(hostKey)
-	if host == "" {
-		host = viper.GetString("DB_HOST")
-	}
-	port := viper.GetString(portKey)
-	if port == "" {
-		port = viper.GetString("DB_PORT")
-	}
-	user := viper.GetString(userKey)
-	if user == "" {
-		user = viper.GetString("DB_USERNAME")
-	}
-	dbname := viper.GetString(nameKey)
-	if dbname == "" {
-		dbname = viper.GetString("DB_NAME")
-	}
-	password := viper.GetString(passKey)
-	if password == "" {
-		password = viper.GetString("DB_PASSWORD")
-	}
-
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable TimeZone=Asia/Jakarta",
-		host, port, user, dbname, password,
-	)
+	dsn := cluster.DSN() + " TimeZone=Asia/Jakarta"
 
 	// Resolve connection pool settings (same fallback chain as the previous client).
 	maxOpenConns := viper.GetInt(fmt.Sprintf("%s_MAX_OPEN_CONNS", prefix))

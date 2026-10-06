@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	pbCard "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card"
-	pbCardStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/card/stats"
+	pbCardStats "github.com/MamangRust/microservice-payment-gateway-grpc/pb/stats/card"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/pkg/logger"
 	stats_cache "github.com/MamangRust/microservice-payment-gateway-grpc/service/apigateway/redis/api/stats"
 	"github.com/MamangRust/microservice-payment-gateway-grpc/shared/errors"

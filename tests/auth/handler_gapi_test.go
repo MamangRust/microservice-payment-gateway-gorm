@@ -49,13 +49,13 @@ func (s *AuthHandlerGapiTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.redisClient = redis.NewClient(opts)
 
-	repos := repository.NewRepositories(&repository.RepositoriesDeps{
-		DB:                gormDB,
-		UserQueryClient:   s.ts.UserQueryClient,
-		UserCommandClient: s.ts.UserCommandClient,
-		RoleQueryClient:   s.ts.RoleQueryClient,
-		RoleCommandClient: s.ts.RoleCommandClient,
-	})
+	repos := repository.NewRepositories(
+		gormDB,
+		s.ts.UserQueryClient,
+		s.ts.UserCommandClient,
+		s.ts.RoleQueryClient,
+		s.ts.UserRoleClient,
+	)
 
 	tokenManager, _ := auth.NewManager("mysecret")
 	hasher := hash.NewHashingPassword()
